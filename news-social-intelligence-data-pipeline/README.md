@@ -1,6 +1,8 @@
 # News & Social Intelligence Data Pipeline
 
-A Rust-based pipeline that collects news from RSS feeds, cleans content, labels articles using game theory analysis (Prof Jiang framework), and stores embeddings in Qdrant for semantic search.
+Multi-source intelligence collection pipeline combining:
+1. **RSS News** (Rust) — 29 feeds, game theory labeling via Prof Jiang framework
+2. **Social Media** (Python) — HackerNews, Reddit, YouTube monitoring
 
 ## Architecture
 
@@ -124,13 +126,67 @@ Payload fields:
 ## Project Structure
 
 ```
-src/
-├── main.rs           # CLI entry point
-├── lib.rs            # Shared config (Qdrant connection)
-├── collectors/       # RSS feed fetching
-├── cleaners/         # HTML processing
-├── labelers/         # LLM game theory analysis
-├── embedders/        # TEI + Qdrant ingestion
-├── storage/          # SQLite operations
-└── health/           # Service health checks
+.
+├── src/                      # Rust RSS Pipeline
+│   ├── main.rs               # CLI entry point
+│   ├── lib.rs                # Shared config (Qdrant connection)
+│   ├── collectors/           # RSS feed fetching
+│   ├── cleaners/             # HTML processing
+│   ├── labelers/             # LLM game theory analysis
+│   ├── embedders/            # TEI + Qdrant ingestion
+│   ├── storage/              # SQLite operations
+│   └── health/               # Service health checks
+│
+├── social_intel/             # Python Social Media Pipeline
+│   ├── collector.py          # Main orchestrator
+│   ├── hackernews.py         # HackerNews API (tech, business)
+│   ├── reddit.py             # Reddit API (news, conspiracy, finance)
+│   ├── youtube.py            # YouTube search (podcasts, trending)
+│   ├── x_twitter.py          # X/Twitter (disabled, needs auth)
+│   └── near_duplicate.py     # Deduplication logic
+│
+└── social_intel_cron.py      # Social media cron runner
 ```
+
+---
+
+## Social Media Intelligence
+
+### Sources
+
+| Source | Topics | Auth Required |
+|--------|--------|---------------|
+| HackerNews | Tech, AI, Business, Startups | ❌ No |
+| Reddit | Global News, Geopolitics, Conspiracy, Finance | ❌ No |
+| YouTube | Tech Podcasts, Business, Politics | ❌ No |
+| X/Twitter | — | ✅ Yes (disabled) |
+
+### Topics Monitored
+
+**HackerNews & YouTube:**
+- AI / Machine Learning / LLM
+- Startup / Venture Capital / Business
+- Tech News / Podcasts
+
+**Reddit Subreddits:**
+- Tech: r/MachineLearning, r/LocalLLaMA, r/technology, r/Futurology
+- Business: r/business, r/Economics, r/stocks, r/investing, r/wallstreetbets
+- News: r/worldnews, r/geopolitics, r/anime_titties, r/neutralnews
+- Conspiracy: r/conspiracy, r/actualconspiracies, r/HighStrangeness
+- Indonesia: r/indonesia, r/finansial
+
+### Usage (Social Media)
+
+```bash
+# Run social media collector
+python social_intel_cron.py
+
+# Custom topics
+python social_intel_cron.py --topics "AI,geopolitics,business" --depth quick
+```
+
+### Qdrant Collection
+
+Collection: `social_intelligence` (768 dimensions)
+
+Payload: `source`, `title`, `url`, `content`, `score`, `published_at`
