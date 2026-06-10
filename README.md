@@ -1,5 +1,10 @@
-# News RSS Data Pipeline
+# Hermes Data Pipeline
 
+Collection of data pipelines for the Hermes Agent ecosystem. Currently includes:
+
+## Pipelines
+
+### 1. News Intelligence Pipeline (`src/`)
 A Rust-based news collection pipeline that scrapes RSS feeds, cleans content, labels articles using game theory analysis (Prof Jiang framework), and stores embeddings in Qdrant for semantic search.
 
 ## Architecture
