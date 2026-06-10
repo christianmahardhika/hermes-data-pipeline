@@ -1,0 +1,22 @@
+{
+  "enabled": true,
+  "name": "Code Quality Review",
+  "description": "Analyzes modified source code for potential improvements including code smells, design patterns, and best practices. Generates suggestions for improving readability, maintainability, and performance while maintaining existing functionality.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/*.go",
+      "**/*.vue",
+      "**/*.js",
+      "**/*.ts",
+      "**/*.jsx",
+      "**/*.tsx",
+      "**/*.css"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Analyze the modified code for potential improvements. Focus on:\n1. Code smells (long methods, duplicated logic, magic numbers, deep nesting)\n2. Design patterns (suggest applicable patterns or flag misused ones)\n3. Best practices (error handling, naming conventions, SOLID principles)\n4. Readability (clarity of intent, comments where needed, consistent formatting)\n5. Maintainability (modularity, separation of concerns, testability)\n6. Performance optimizations (unnecessary allocations, N+1 queries, inefficient loops)\n\nProvide concise, actionable suggestions that maintain existing functionality. Prioritize the most impactful improvements."
+  }
+}

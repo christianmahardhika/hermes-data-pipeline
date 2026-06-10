@@ -43,6 +43,7 @@ async fn main() -> Result<()> {
         "health" => run_health(&config).await?,
         "daemon" => run_daemon(&config).await?,
         "prune" => run_prune(&config).await?,
+        "social" => run_social(&config, &args).await?,
         _ => {
             println!("News Collector - Rust ETL Pipeline");
             println!();
@@ -57,6 +58,11 @@ async fn main() -> Result<()> {
             println!("  health   Check Kiro health");
             println!("  daemon   Run as scheduled daemon (15min)");
             println!("  prune    Prune ingested records from SQLite");
+            println!("  social   Run social intelligence collector");
+            println!();
+            println!("Social subcommands:");
+            println!("  social --query \"AI\" --depth quick");
+            println!("  social --front-page");
         }
     }
 
@@ -223,4 +229,79 @@ async fn run_daemon(config: &Config) -> Result<()> {
         info!("💤 Sleeping for 15 minutes...");
         tokio::time::sleep(interval).await;
     }
+}
+
+/// Run social intelligence collector
+async fn run_social(config: &Config, args: &[String]) -> Result<()> {
+    use news_collector::social::{collector::SocialCollector, Depth};
+
+    info!("🌐 Starting social intelligence collector...");
+
+    // Parse args: --query "..." --depth quick/default/deep --front-page --no-store
+    let mut query: Option<String> = None;
+    let mut depth = Depth::Default;
+    let mut front_page = false;
+    let mut store = true;
+
+    let mut i = 2; // skip "news-collector" and "social"
+    while i < args.len() {
+        match args[i].as_str() {
+            "--query" | "-q" => {
+                if i + 1 < args.len() {
+                    query = Some(args[i + 1].clone());
+                    i += 2;
+                } else {
+                    i += 1;
+                }
+            }
+            "--depth" => {
+                if i + 1 < args.len() {
+                    depth = args[i + 1].parse().unwrap_or(Depth::Default);
+                    i += 2;
+                } else {
+                    i += 1;
+                }
+            }
+            "--front-page" => {
+                front_page = true;
+                i += 1;
+            }
+            "--no-store" => {
+                store = false;
+                i += 1;
+            }
+            _ => {
+                i += 1;
+            }
+        }
+    }
+
+    if query.is_none() && !front_page {
+        println!("Usage: news-collector social [options]");
+        println!();
+        println!("Options:");
+        println!("  --query, -q <text>   Search query (required unless --front-page)");
+        println!("  --depth <level>      quick, default, or deep (default: default)");
+        println!("  --front-page         Get HackerNews front page instead of searching");
+        println!("  --no-store           Don't store in Qdrant, just print results");
+        return Ok(());
+    }
+
+    let collector = SocialCollector::new(&config.qdrant_url, &config.tei_url).await?;
+
+    if front_page {
+        info!("📥 Collecting HackerNews front page...");
+        let (items, stats) = collector.collect_hackernews(None, depth, store).await?;
+        println!("\n=== HackerNews Front Page ({} items) ===", items.len());
+        for item in items.iter().take(10) {
+            println!("  [{}] {}", item.score, &item.title[..item.title.len().min(70)]);
+        }
+        println!("\n📊 Stats: {}", stats);
+    } else if let Some(ref q) = query {
+        info!("📥 Collecting all sources for '{}'...", q);
+        let stats = collector.collect_all(q, depth, None, store).await?;
+        println!("\n📊 Social collection complete: {}", stats);
+    }
+
+    Ok(())
 }

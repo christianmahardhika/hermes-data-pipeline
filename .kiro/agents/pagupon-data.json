@@ -1,0 +1,13 @@
+{
+  "name": "pagupon-data",
+  "description": "Pagupon Data pipeline",
+  "tools": ["fs_read", "fs_write", "execute_bash", "grep", "glob", "code", "web_search", "web_fetch", "use_aws"],
+  "allowedTools": ["fs_read", "grep", "glob", "code"],
+  "resources": [
+    "file://README.md",
+    "file://backend/routes/routes.go",
+    "file://backend/config/config.go",
+    "skill://.kiro/skills/*.md",
+    "skill://.kiro/steering/*.md"
+  ]
+}

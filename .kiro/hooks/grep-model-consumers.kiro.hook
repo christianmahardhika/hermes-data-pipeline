@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Grep Model Consumers",
+  "description": "Saat file model Go (models/*.go) diedit, otomatis remind developer untuk grep semua downstream consumers: formatters, serializers, notifications, receipts, handlers yang menggunakan model tersebut.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "backend/models/*.go"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "File model baru saja diedit. WAJIB cek downstream consumers:\n\n1. **Grep semua file yang import/menggunakan model ini**:\n   - `grep -r \"StructName\" backend/handlers/` — handlers yang pakai model\n   - `grep -r \"StructName\" backend/services/` — services yang pakai model\n   - `grep -r \"StructName\" backend/database/` — database operations\n   - Cek juga di frontend services/stores jika ada API response yang berubah\n\n2. **Identifikasi impact**:\n   - Apakah ada field baru yang perlu di-serialize ke JSON response?\n   - Apakah ada field yang dihapus yang masih direferensi?\n   - Apakah ada notification/receipt yang perlu update format?\n   - Apakah ada migration yang perlu dibuat?\n\n3. **Report**:\n   - List semua file yang terpengaruh\n   - Tandai mana yang perlu diupdate\n   - Jika ada breaking change, warn user\n\nJangan skip langkah ini — missing consumer update adalah sumber bug production yang umum."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Session Retrospective",
+  "description": "Menjalankan Retrospective skill setelah sesi agent selesai untuk menganalisis learnings dari sesi tersebut, mengupdate knowledge base di .kiro/steering/learnings.md, dan mengupgrade skill files berdasarkan patterns yang ditemukan.",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Activate the \"Retrospective\" skill. Analyze the conversation session that just completed. Perform these steps:\n\n1. **Collect Learnings**: Review what was done in this session — what worked, what failed, what patterns emerged (recurring issues, knowledge gaps, process improvements).\n\n2. **Update Learnings Log**: Append new learnings to `.kiro/steering/learnings.md`. If the file doesn't exist, create it. Use this format:\n   ## [Date] — [Context/Feature worked on]\n   **Issue**: [What happened or was discovered]\n   **Root Cause**: [Why]\n   **Learning**: [What we learned]\n   **Action Taken**: [What was changed or should change]\n\n3. **Upgrade Skills if needed**: If patterns suggest a skill file in `.kiro/skills/` needs updating (e.g., missing best practice, outdated instruction, new pattern discovered), propose and apply the update. Max 3 changes per session.\n\n4. **Upgrade Steering if needed**: If coding standards, debugging guides, or other steering files in `.kiro/steering/` should be updated based on session learnings, apply the update.\n\nKeep changes minimal and surgical. Only update if there's a concrete, actionable learning — don't update for the sake of updating."
+  }
+}

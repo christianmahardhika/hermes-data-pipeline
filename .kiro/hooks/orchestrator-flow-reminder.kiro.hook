@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Orchestrator Flow Reminder",
+  "description": "Saat agent submit prompt baru, remind Orchestrator untuk selalu mengikuti standard flow dan tidak skip steps. Pastikan context dari phase sebelumnya tersedia.",
+  "version": "1",
+  "when": {
+    "type": "promptSubmit"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Sebelum memproses request ini, cek Orchestrator workflow state:\n\n1. **Apakah ada feature yang sedang in-progress?** Cek apakah ada task yang belum selesai dari flow sebelumnya.\n\n2. **Phase saat ini?** Tentukan kita di phase mana:\n   - Development (TDD: Red → Green → Refactor)\n   - QA Validation (unit + property + lint)\n   - Security & Performance testing\n   - Deployment preparation\n\n3. **Quality gates terpenuhi?** Jangan lanjut ke phase berikutnya jika gate sebelumnya belum pass.\n\n4. **Context handoff**: Pastikan context dari phase sebelumnya tersedia untuk phase berikutnya.\n\nPrinsip: SELF-DRIVING — jalankan full workflow tanpa menunggu user menyuruh setiap step. Tapi JANGAN skip quality gates."
+  }
+}

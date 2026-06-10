@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Safe Shell Guard",
+  "description": "Sebelum menjalankan shell command, validasi bahwa command aman: tidak ada destructive operations tanpa konfirmasi, tidak ada secrets yang ter-expose, dan command sesuai dengan project conventions.",
+  "version": "1",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": [
+      "shell"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Validasi shell command yang akan dijalankan:\n\n**BLOCK jika**:\n- `rm -rf` pada directory penting (backend/, frontend/, .kiro/, .git/)\n- `git push --force` ke main/master\n- `git reset --hard` tanpa backup\n- Command yang expose secrets (echo $JWT_SECRET, cat .env)\n- `docker system prune` tanpa konfirmasi user\n- DROP TABLE / DROP DATABASE tanpa konfirmasi\n\n**ALLOW jika**:\n- Test commands (go test, vitest, cypress)\n- Lint commands (go vet, eslint)\n- Build commands (go build, npm run build)\n- Docker compose up/down/restart\n- Git status, diff, log, branch operations\n- File reads (cat, grep, find) pada non-secret files\n\nJika command aman: proceed.\nJika command berbahaya: BLOCK dan jelaskan risikonya."
+  }
+}

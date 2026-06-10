@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Pre-Write Standards Check",
+  "description": "Sebelum melakukan write operation pada file Go backend, validasi bahwa perubahan mengikuti coding standards: proper error handling, multi-tenancy scoping, input validation, dan security best practices.",
+  "version": "1",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": [
+      "write"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Sebelum menulis file, validasi bahwa konten yang akan ditulis mengikuti standards:\n\n**Untuk file Go (.go)**:\n- ✅ Error handling: semua error di-check, tidak ada `_` untuk error returns\n- ✅ Multi-tenancy: query di-scope by business_id jika applicable\n- ✅ Input validation: validator tags atau manual validation ada\n- ✅ Security: tidak ada hardcoded secrets, parameterized queries\n- ✅ Naming: PascalCase exports, camelCase internal, proper acronyms (ID, URL, UUID)\n- ✅ Financial: int64 untuk Rupiah, guard zero-denominator\n\n**Untuk file Vue/JS (.vue, .js, .ts)**:\n- ✅ Composition API dengan `<script setup>`\n- ✅ Tidak ada v-html dengan raw user input\n- ✅ API calls via services/, bukan langsung di component\n- ✅ Proper error handling di async operations\n\nJika ada violation: BLOCK write dan jelaskan apa yang perlu diperbaiki.\nJika semua OK: proceed dengan write operation."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Post-Task QA Validation",
+  "description": "Setelah spec task selesai diimplementasi, otomatis trigger QA validation: jalankan unit tests, property tests, dan lint untuk memastikan quality gate terpenuhi sebelum lanjut ke task berikutnya.",
+  "version": "1",
+  "when": {
+    "type": "postTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Task baru saja selesai. Sebagai Orchestrator, jalankan QA validation:\n\n1. **Unit Tests**: Jalankan `cd backend && go test -short ./...` untuk backend, atau `cd frontend && npx vitest --run` untuk frontend (sesuai file yang diubah).\n\n2. **Lint Check**: Jalankan `cd backend && go vet ./...` untuk backend, atau `cd frontend && npx eslint --max-warnings 0 src/` untuk frontend.\n\n3. **Property Tests** (jika ada): Jalankan `cd backend && go test -run TestProperty ./...`\n\n4. **Coverage Check**: Pastikan coverage tidak turun dari baseline.\n\nJika ada yang FAIL:\n- Identifikasi root cause\n- Fix langsung tanpa menunggu user\n- Re-run sampai semua GREEN\n\nJika semua PASS:\n- Report ringkas: ✅ Unit tests, ✅ Lint, ✅ Property tests\n- Lanjut ke task berikutnya\n\nJANGAN declare done sampai semua checks pass."
+  }
+}

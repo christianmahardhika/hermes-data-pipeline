@@ -11,6 +11,7 @@ mod labelers;
 mod embedders;
 pub mod storage;
 pub mod health;
+pub mod social;
 
 pub use collectors::RssCollector;
 pub use cleaners::ArticleCleaner;
@@ -48,7 +49,7 @@ impl Default for Config {
             kiro_url: std::env::var("KIRO_URL")
                 .unwrap_or_else(|_| "http://localhost:9000".to_string()),
             kiro_api_key: std::env::var("KIRO_API_KEY")
-                .unwrap_or_else(|_| "Pagupon123".to_string()),
+                .expect("KIRO_API_KEY environment variable must be set"),
             tei_url: std::env::var("TEI_URL")
                 .unwrap_or_else(|_| "http://localhost:8082".to_string()),
             qdrant_url: std::env::var("QDRANT_URL")
