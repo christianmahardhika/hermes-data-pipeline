@@ -32,6 +32,7 @@ from modules.debate_engine import debate_stock
 from modules.trader_executor import generate_trader_proposal
 from modules.risk_manager import assess_risk
 from modules.memory_logger import MemoryLogger
+from modules.notion_integration import NotionPortfolioFetcher, get_stock_data_from_notion
 
 
 class EnhancedIDXAnalyst:
@@ -128,35 +129,47 @@ Risk Score: {risk.risk_score:.2f}/1.0
 """
         return output.strip()
     
-    def run_analysis(self, tickers: List[str], mock_data: bool = False) -> str:
+    def run_analysis(self, tickers: List[str], mock_data: bool = False, use_notion: bool = True) -> str:
         """Run analysis for multiple tickers"""
         
         time_wib = datetime.now().strftime("%H:%M WIB")
         output = f"📊 **Enhanced IDX Analyst** | {time_wib}\n"
         output += "=" * 60 + "\n\n"
         
-        for ticker in tickers:
-            # Mock stock data (in production, fetch from Notion)
-            if mock_data:
-                stock_data = {
-                    "ticker": ticker,
-                    "current_price": 10000 + len(ticker) * 100,  # Mock price
-                    "per": 12 + (ord(ticker[0]) % 3),
-                    "pbv": 1.5 + (ord(ticker[1]) % 2) * 0.2,
-                    "roe": 12 + (ord(ticker[2]) % 5),
-                    "der": 0.8 + (ord(ticker[3]) % 2) * 0.1,
-                    "dividend_yield": 3.5 + (len(ticker) % 2) * 0.5,
-                    "sentiment_score": 0.3,
-                    "portfolio_value": 279_100_000,  # Christian's portfolio
-                }
-            else:
-                # Would fetch from Notion in production
-                stock_data = self._fetch_stock_data(ticker)
-            
+        # Try to initialize Notion fetcher if not using mock
+        notion_fetcher = None
+        if not mock_data and use_notion:
             try:
+                notion_fetcher = NotionPortfolioFetcher()
+                print("✅ Notion connected", file=sys.stderr)
+            except Exception as e:
+                print(f"⚠️ Notion unavailable: {e}. Using mock data.", file=sys.stderr)
+                mock_data = True
+        
+        for ticker in tickers:
+            try:
+                # Fetch stock data (prioritize Notion, fallback to mock)
+                if mock_data:
+                    stock_data = {
+                        "ticker": ticker,
+                        "current_price": 10000 + len(ticker) * 100,  # Mock price
+                        "per": 12 + (ord(ticker[0]) % 3),
+                        "pbv": 1.5 + (ord(ticker[1]) % 2) * 0.2,
+                        "roe": 12 + (ord(ticker[2]) % 5),
+                        "der": 0.8 + (ord(ticker[3]) % 2) * 0.1,
+                        "dividend_yield": 3.5 + (len(ticker) % 2) * 0.5,
+                        "sentiment_score": 0.3,
+                        "portfolio_value": 279_100_000,
+                    }
+                elif notion_fetcher:
+                    stock_data = notion_fetcher.fetch_stock_data(ticker)
+                else:
+                    stock_data = self._fetch_stock_data(ticker)
+                
                 result = self.analyze_stock(ticker, stock_data)
                 self.results[ticker] = result
                 output += self.format_output(result) + "\n"
+                
             except Exception as e:
                 print(f"❌ Error analyzing {ticker}: {e}", file=sys.stderr)
                 output += f"❌ Error analyzing {ticker}\n"
