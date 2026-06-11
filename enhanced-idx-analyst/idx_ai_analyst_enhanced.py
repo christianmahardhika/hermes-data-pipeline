@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 """
-Enhanced IDX AI Analyst with Debate Mechanism
+Enhanced IDX AI Analyst with Debate Mechanism + RTI Format + IDX Scraper + Dividend Sync
 Combines 5-persona system with TradingAgents concepts:
 - Data gathering (analyst team)
-- Debate mechanism (bull/bear researchers)
+- Debate mechanism (5-persona bull/bear researchers with detailed reasoning)
 - Trade execution (trader agent)
 - Risk management (portfolio constraints)
 - Decision memory (logging + reflection)
+- IDX scraper (curl_cffi bypass Cloudflare)
+- RTI Business output formatting
+- Notion dividend sync (historical records)
 
 Usage:
-    python idx_ai_analyst_enhanced.py --all
-    python idx_ai_analyst_enhanced.py BMRI KLBF
+    python idx_ai_analyst_enhanced.py --portfolio
+    python idx_ai_analyst_enhanced.py --all --debug
+    python idx_ai_analyst_enhanced.py BMRI KLBF --mock
 """
 
 import sys
@@ -25,7 +29,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from config import (
     PORTFOLIO_STOCKS, WATCHLIST_STOCKS, ALL_STOCKS,
-    CRITERIA, PERSONAS, DEBATE_CONFIG, RISK_CONFIG, MEMORY_CONFIG, EXECUTION_CONFIG
+    CRITERIA, PERSONAS, DEBATE_CONFIG, RISK_CONFIG, MEMORY_CONFIG, EXECUTION_CONFIG, NOTION_CONFIG
 )
 from modules.data_gathering import gather_analyst_reports
 from modules.debate_engine import debate_stock
@@ -33,29 +37,57 @@ from modules.trader_executor import generate_trader_proposal
 from modules.risk_manager import assess_risk
 from modules.memory_logger import MemoryLogger
 from modules.notion_integration import NotionPortfolioFetcher, get_stock_data_from_notion
+from modules.idx_scraper import IDXDataScraper, scrape_idx_data
+from modules.output_formatter import RTIBusinessFormatter, format_multiple_stocks
+from modules.dividend_sync import DividendSyncer, DividendRecorder
 
 
 class EnhancedIDXAnalyst:
-    """Main orchestrator for enhanced analysis"""
+    """Main orchestrator for enhanced analysis with all enhancements"""
     
     def __init__(self, debug: bool = False):
         self.debug = debug
         self.memory_logger = MemoryLogger(MEMORY_CONFIG.get("memory_dir"))
         self.results = {}
+        self.idx_scraper = IDXDataScraper()
+        self.formatter = RTIBusinessFormatter()
+        self.dividend_syncer = DividendSyncer(
+            portfolio_db_id=NOTION_CONFIG.get("portfolio_db_id")
+        )
     
     def analyze_stock(self, ticker: str, stock_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Run complete analysis pipeline for one stock"""
+        """Run complete analysis pipeline for one stock with all enhancements"""
         
         if self.debug:
             print(f"📊 Analyzing {ticker}...", file=sys.stderr)
         
-        # Step 1: Gather analyst reports
-        analyst_reports = gather_analyst_reports(ticker, stock_data)
+        # Step 0: Fetch complete IDX profile (curl_cffi + yfinance)
+        idx_profile = self.idx_scraper.fetch_complete_profile(ticker)
+        if self.debug:
+            print(f"   IDX Profile: {len(idx_profile)} fields", file=sys.stderr)
         
-        # Step 2: Run debate
+        # Merge IDX profile into stock_data
+        stock_data_enriched = {**stock_data, **idx_profile}
+        
+        # Step 1: Gather analyst reports (old approach, but still useful)
+        analyst_reports = gather_analyst_reports(ticker, stock_data_enriched)
+        
+        # Step 2: Run debate with NEW 5-persona system (passing metrics dict)
+        # Extract metrics for debate engine
+        metrics = {
+            "current_price": stock_data_enriched.get("current_price", 0),
+            "per": stock_data_enriched.get("per", 0),
+            "pbv": stock_data_enriched.get("pbv", 0),
+            "roe": stock_data_enriched.get("roe", 0),
+            "roa": stock_data_enriched.get("roa", 0),
+            "npm": stock_data_enriched.get("npm", 0),
+            "dy": stock_data_enriched.get("dy", 0),
+            "der": stock_data_enriched.get("der", 0),
+        }
+        
         debate_result = debate_stock(
             ticker,
-            analyst_reports,
+            metrics,
             max_rounds=DEBATE_CONFIG.get("max_rounds", 2)
         )
         
@@ -63,22 +95,22 @@ class EnhancedIDXAnalyst:
         trader_proposal = generate_trader_proposal(
             ticker,
             debate_result["final_signal"],
-            stock_data,
+            stock_data_enriched,
             analyst_reports,
             EXECUTION_CONFIG
         )
         
         # Step 4: Risk assessment
-        portfolio_value = stock_data.get("portfolio_value", 100_000_000)  # Default Rp 100M
+        portfolio_value = stock_data_enriched.get("portfolio_value", 279_100_000)
         risk_assessment = assess_risk(
             ticker,
             trader_proposal.position_size_pct,
-            stock_data,
+            stock_data_enriched,
             portfolio_value,
             RISK_CONFIG
         )
         
-        # Step 5: Log decision
+        # Step 5: Log decision with full debate transcript
         self.memory_logger.log_decision(
             ticker=ticker,
             trade_date=datetime.now().strftime("%Y-%m-%d"),
@@ -88,52 +120,69 @@ class EnhancedIDXAnalyst:
             stop_loss=trader_proposal.stop_loss,
             take_profit=trader_proposal.take_profit,
             position_size_pct=trader_proposal.position_size_pct,
-            debate_summary=debate_result["debate_transcript"][:500],  # First 500 chars
+            debate_summary=debate_result["consensus_summary"],  # Use consensus instead of transcript
             trader_reasoning=trader_proposal.reasoning
         )
         
         return {
             "ticker": ticker,
+            "stock_data": stock_data_enriched,
+            "idx_profile": idx_profile,
             "analyst_reports": analyst_reports,
             "debate_result": debate_result,
             "trader_proposal": trader_proposal,
             "risk_assessment": risk_assessment,
         }
     
-    def format_output(self, analysis_result: Dict[str, Any]) -> str:
-        """Format analysis for Telegram delivery"""
+    def format_output_rti(self, analysis_result: Dict[str, Any]) -> str:
+        """Format analysis using RTI Business style"""
         
         ticker = analysis_result["ticker"]
-        debate = analysis_result["debate_result"]
-        proposal = analysis_result["trader_proposal"]
-        risk = analysis_result["risk_assessment"]
+        stock_data = analysis_result["stock_data"]
+        debate_result = analysis_result["debate_result"]
+        trader_proposal = analysis_result["trader_proposal"]
+        risk_assessment = analysis_result["risk_assessment"]
+        idx_profile = analysis_result.get("idx_profile", {})
         
-        output = f"""
-📊 **{ticker} — Enhanced Analysis**
-**Signal:** {debate['final_signal']} | **Confidence:** {debate['confidence']}
-⏰ {datetime.now().strftime('%H:%M WIB')}
-
-**Debate Summary (2 Rounds):**
-{debate['debate_transcript'][:400]}...
-
-**Trader Proposal:**
-Action: {proposal.action.value}
-{f'Entry: Rp {proposal.entry_price:,.0f}' if proposal.entry_price else 'N/A'}
-{f'Stop: Rp {proposal.stop_loss:,.0f}' if proposal.stop_loss else 'N/A'}
-{f'Size: {proposal.position_size_pct*100:.1f}%' if proposal.position_size_pct else 'N/A'}
-
-**Risk Status:** {'✅ Approved' if risk.is_approved else '⚠️ Flagged'}
-Risk Score: {risk.risk_score:.2f}/1.0
-
----
-"""
-        return output.strip()
+        # Use RTI formatter
+        rti_output = self.formatter.format_analysis(
+            ticker=ticker,
+            stock_data=stock_data,
+            debate_result=debate_result,
+            trader_proposal=trader_proposal,
+            risk_assessment=risk_assessment,
+            idx_profile=idx_profile
+        )
+        
+        return str(rti_output)
     
-    def run_analysis(self, tickers: List[str], mock_data: bool = False, use_notion: bool = True) -> str:
-        """Run analysis for multiple tickers"""
+    def format_output_telegram_compact(self, analysis_result: Dict[str, Any]) -> str:
+        """Format analysis for quick Telegram scanning"""
+        
+        ticker = analysis_result["ticker"]
+        stock_data = analysis_result["stock_data"]
+        debate_result = analysis_result["debate_result"]
+        
+        signal = debate_result["final_signal"]
+        price = stock_data.get("current_price", 0)
+        per = stock_data.get("per", 0)
+        dy = stock_data.get("dy", 0)
+        roe = stock_data.get("roe", 0)
+        der = stock_data.get("der", 0)
+        
+        return self.formatter.format_telegram_compact(ticker, signal, price, per, dy, roe, der)
+    
+    def run_analysis(
+        self,
+        tickers: List[str],
+        mock_data: bool = False,
+        use_notion: bool = True,
+        format_style: str = "compact"  # "compact" or "full"
+    ) -> str:
+        """Run analysis for multiple tickers with all enhancements"""
         
         time_wib = datetime.now().strftime("%H:%M WIB")
-        output = f"📊 **Enhanced IDX Analyst** | {time_wib}\n"
+        output = f"📊 **IDX AI ANALYST — ENHANCED DEBATE SYSTEM** | {time_wib}\n"
         output += "=" * 60 + "\n\n"
         
         # Try to initialize Notion fetcher if not using mock
@@ -146,18 +195,23 @@ Risk Score: {risk.risk_score:.2f}/1.0
                 print(f"⚠️ Notion unavailable: {e}. Using mock data.", file=sys.stderr)
                 mock_data = True
         
+        # Collect all results for dividend sync
+        historical_dividends_map = {}
+        
         for ticker in tickers:
             try:
                 # Fetch stock data (prioritize Notion, fallback to mock)
                 if mock_data:
                     stock_data = {
                         "ticker": ticker,
-                        "current_price": 10000 + len(ticker) * 100,  # Mock price
+                        "current_price": 10000 + len(ticker) * 100,
                         "per": 12 + (ord(ticker[0]) % 3),
                         "pbv": 1.5 + (ord(ticker[1]) % 2) * 0.2,
                         "roe": 12 + (ord(ticker[2]) % 5),
+                        "roa": 5 + (ord(ticker[0]) % 3),
+                        "npm": 10 + (ord(ticker[1]) % 5),
                         "der": 0.8 + (ord(ticker[3]) % 2) * 0.1,
-                        "dividend_yield": 3.5 + (len(ticker) % 2) * 0.5,
+                        "dy": 3.5 + (len(ticker) % 2) * 0.5,
                         "sentiment_score": 0.3,
                         "portfolio_value": 279_100_000,
                     }
@@ -168,11 +222,32 @@ Risk Score: {risk.risk_score:.2f}/1.0
                 
                 result = self.analyze_stock(ticker, stock_data)
                 self.results[ticker] = result
-                output += self.format_output(result) + "\n"
+                
+                # Collect historical dividends for later sync
+                idx_profile = result.get("idx_profile", {})
+                dividends = idx_profile.get("historical_dividends", [])
+                if dividends:
+                    historical_dividends_map[ticker] = dividends
+                
+                # Format output
+                if format_style == "full":
+                    output += self.format_output_rti(result) + "\n\n"
+                else:
+                    output += self.format_output_telegram_compact(result) + "\n\n"
                 
             except Exception as e:
                 print(f"❌ Error analyzing {ticker}: {e}", file=sys.stderr)
-                output += f"❌ Error analyzing {ticker}\n"
+                output += f"❌ Error analyzing {ticker}: {str(e)}\n\n"
+        
+        # Step 6: Sync dividends to Notion (NEW enhancement #4)
+        if not mock_data and historical_dividends_map:
+            print(f"\n📊 Syncing {len(historical_dividends_map)} stocks' dividend history to Notion...", file=sys.stderr)
+            try:
+                sync_results = self.dividend_syncer.sync_all_portfolio(historical_dividends_map)
+                synced_count = sum(1 for v in sync_results.values() if v is True)
+                print(f"✅ Synced {synced_count} stocks", file=sys.stderr)
+            except Exception as e:
+                print(f"⚠️ Dividend sync partial: {e}", file=sys.stderr)
         
         # Add memory summary
         output += "\n" + self.memory_logger.format_memory_summary()
@@ -180,19 +255,40 @@ Risk Score: {risk.risk_score:.2f}/1.0
         return output
     
     def _fetch_stock_data(self, ticker: str) -> Dict[str, Any]:
-        """Fetch stock data from Notion (placeholder)"""
-        # In production, integrate with existing portfolio scraper
-        return {
-            "ticker": ticker,
-            "current_price": 0,
-            "per": 0,
-            "pbv": 0,
-            "roe": 0,
-            "der": 0,
-            "dividend_yield": 0,
-            "sentiment_score": 0,
-            "portfolio_value": 279_100_000,
-        }
+        """Fetch stock data from yfinance (fallback)"""
+        try:
+            import yfinance as yf
+            stock = yf.Ticker(f"{ticker}.JK")
+            info = stock.info
+            
+            return {
+                "ticker": ticker,
+                "current_price": info.get("currentPrice", 0),
+                "per": info.get("trailingPE", 0),
+                "pbv": info.get("priceToBook", 0),
+                "roe": info.get("returnOnEquity", 0) * 100,
+                "roa": info.get("returnOnAssets", 0) * 100,
+                "npm": info.get("profitMargin", 0) * 100,
+                "der": info.get("debtToEquity", 0),
+                "dy": info.get("dividendYield", 0) * 100,
+                "sentiment_score": 0,
+                "portfolio_value": 279_100_000,
+            }
+        except Exception as e:
+            print(f"⚠️ yfinance fetch failed for {ticker}: {e}", file=sys.stderr)
+            return {
+                "ticker": ticker,
+                "current_price": 0,
+                "per": 0,
+                "pbv": 0,
+                "roe": 0,
+                "roa": 0,
+                "npm": 0,
+                "der": 0,
+                "dy": 0,
+                "sentiment_score": 0,
+                "portfolio_value": 279_100_000,
+            }
 
 
 def main():
@@ -201,6 +297,7 @@ def main():
     # Parse arguments
     debug = "--debug" in sys.argv
     mock_mode = "--mock" in sys.argv or "--test" in sys.argv
+    format_style = "full" if "--full" in sys.argv else "compact"
     
     # Determine tickers
     if "--all" in sys.argv:
@@ -216,7 +313,7 @@ def main():
     
     # Run analysis
     analyst = EnhancedIDXAnalyst(debug=debug)
-    output = analyst.run_analysis(tickers, mock_data=mock_mode)
+    output = analyst.run_analysis(tickers, mock_data=mock_mode, format_style=format_style)
     
     # Print output
     print(output)
