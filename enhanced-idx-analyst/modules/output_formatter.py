@@ -53,8 +53,8 @@ class RTIBusinessFormatter:
         ticker: str,
         stock_data: Dict[str, Any],
         debate_result: Dict[str, Any],
-        trader_proposal: Dict[str, Any],
-        risk_assessment: Dict[str, Any],
+        trader_proposal: Any,
+        risk_assessment: Any,
         idx_profile: Optional[Dict[str, Any]] = None,
     ) -> RTIBusinessOutput:
         """Format complete analysis to RTI Business style"""
@@ -68,13 +68,19 @@ class RTIBusinessFormatter:
         signal = debate_result.get("final_signal", "HOLD")
         confidence = debate_result.get("confidence", "MEDIUM")
         
+        # Convert risk_assessment to dict if needed
+        if hasattr(risk_assessment, '__dict__'):
+            risk_dict = vars(risk_assessment)
+        else:
+            risk_dict = risk_assessment if isinstance(risk_assessment, dict) else {}
+        
         # Build sections
         price_section = self._format_price_section(ticker, stock_data, idx_profile)
         market_section = self._format_market_section(stock_data, idx_profile)
         fundamentals_section = self._format_fundamentals_section(stock_data, idx_profile)
         signal_section = self._format_signal_section(signal, confidence, debate_result)
         debate_section = self._format_debate_section(debate_result)
-        extras_section = self._format_extras_section(trader_proposal, risk_assessment, idx_profile)
+        extras_section = self._format_extras_section(trader_proposal, risk_dict, idx_profile)
         
         return RTIBusinessOutput(
             ticker=ticker,
@@ -152,7 +158,7 @@ class RTIBusinessFormatter:
         Threshold: 80% personas agree
         """
         emoji = self.emoji_map.get(signal, "❓")
-        bull_win = debate_result.get("bull_win_rate", 0.5)
+        bull_win = debate_result.get("bull_win_rate", 0.5) if isinstance(debate_result, dict) else 0.5
         
         return f"""{emoji} SIGNAL: {signal} ({confidence} confidence)
 Bull vs Bear agreement: {bull_win*100:.0f}% confidence in this direction"""
@@ -164,32 +170,56 @@ Bull vs Bear agreement: {bull_win*100:.0f}% confidence in this direction"""
         Round 1:
         🦉 Bull (Buffett): [argument]
         🐻 Bear (Graham): [counter-argument]
-        
-        Round 2:
-        🦉 Bull Rebuttal: [response]
-        🐻 Bear Rebuttal: [response]
-        
-        Consensus: Bull argues moat strength, Bear counters margin safety concern
         """
         rounds = debate_result.get("debate_rounds", [])
-        personas_mentioned = debate_result.get("personas_pair", [])
+        personas_pair = debate_result.get("personas_pair", [])
         
         debate_text = "🎯 DEBATE REASONING:\n"
         
         for i, round_data in enumerate(rounds, 1):
             debate_text += f"\n**Round {i}:**\n"
             
-            if isinstance(round_data, dict):
+            # Handle dataclass DebateRound objects
+            if hasattr(round_data, 'bull_argument'):
+                bull_arg = round_data.bull_argument
+                bear_arg = round_data.bear_argument
+                bull_persona_key = round_data.bull_persona
+                bear_persona_key = round_data.bear_persona
+                bull_conf = round_data.bull_confidence
+                bear_conf = round_data.bear_confidence
+            else:
+                # Fallback for dict
                 bull_arg = round_data.get("bull_argument", "")
                 bear_arg = round_data.get("bear_argument", "")
+                bull_persona_key = round_data.get("bull_persona", "buffett")
+                bear_persona_key = round_data.get("bear_persona", "graham")
                 bull_conf = round_data.get("bull_confidence", "MEDIUM")
                 bear_conf = round_data.get("bear_confidence", "MEDIUM")
-                
-                if i <= len(personas_mentioned):
-                    bull_persona, bear_persona = personas_mentioned[i-1]
-                    debug_txt = f"🦉 Bull ({bull_persona.title()}) [{bull_conf}]:\n{bull_arg[:200]}...\n\n"
-                    debug_txt += f"🐻 Bear ({bear_persona.title()}) [{bear_conf}]:\n{bear_arg[:200]}...\n"
-                    debate_text += debug_txt
+            
+            # Map persona keys to emojis
+            persona_emoji_map = {
+                "buffett": "🦉", "graham": "📚", "lynch": "🎯", 
+                "munger": "🧠", "guru_id": "🇮🇩"
+            }
+            
+            bull_emoji = persona_emoji_map.get(bull_persona_key, "🦉")
+            bear_emoji = persona_emoji_map.get(bear_persona_key, "📚")
+            
+            # Show first meaningful section (~300 chars, cut at paragraph boundary)
+            bull_lines = bull_arg.split('\n')
+            bull_summary = bull_lines[0] + '\n' + bull_lines[1] if len(bull_lines) > 1 else bull_arg[:300]
+            if len(bull_summary) > 300:
+                bull_summary = bull_summary[:300].rsplit('\n', 1)[0] + "..."
+            
+            bear_lines = bear_arg.split('\n')
+            bear_summary = bear_lines[0] + '\n' + bear_lines[1] if len(bear_lines) > 1 else bear_arg[:300]
+            if len(bear_summary) > 300:
+                bear_summary = bear_summary[:300].rsplit('\n', 1)[0] + "..."
+            
+            debate_text += f"{bull_emoji} **Bull ({bull_persona_key.title()})** [{bull_conf}]:\n"
+            debate_text += f"{bull_summary}\n\n"
+            debate_text += f"{bear_emoji} **Bear ({bear_persona_key.title()})** [{bear_conf}]:\n"
+            debate_text += f"{bear_summary}\n"
         
         consensus = debate_result.get("consensus_summary", "Debate concluded")
         debate_text += f"\n**Consensus:** {consensus}"

@@ -68,28 +68,31 @@ class BuffettPersona(PersonaStyle):
         case = f"""
 🦉 **Buffett Bull Case for {ticker}**
 
-This company exhibits classic moat characteristics:
+Owner mentality: This is a business worth holding forever, not a stock to trade.
 
-1. **Quality Moat (ROE {roe:.1f}%)**: High return on equity signals competitive advantage
-   - Ability to reinvest earnings at high rates indicates sustainable moat
-   - Economic advantages allow premium pricing power
+1. **Quality Moat (ROE {roe:.1f}%)**:
+   📖 "The investor should ask: does the business have a durable competitive advantage?"
+   - ROE demonstrates ability to reinvest at high rates (sustainable moat marker)
+   - Premium pricing power indicates economic advantages
+   - Owner return on incremental capital validates long-term viability
 
-2. **Dividend Quality (Yield {dy:.2f}%)**:
-   - Sustainable dividend demonstrates cash generation capability
-   - Income provides downside cushion for patient shareholders
-   - Payout policy indicates management confidence in business durability
+2. **Dividend Power (Yield {dy:.2f}%)**:
+   📖 "Reinvestment of dividends is where compounding truly accelerates"
+   - Sustainable distributions prove real cash generation
+   - Reinvestment compounds wealth exponentially over decades
+   - Management confidence signaled through payout consistency
 
-3. **Conservative Leverage (D/E {der:.2f}x)**:
-   - Low debt provides financial flexibility
-   - Room to increase leverage or return capital if needed
-   - Safety-first approach protects downside in downturns
+3. **Balance Sheet Fortress (D/E {der:.2f}x)**:
+   - Low leverage = flexibility for opportunities & downturns
+   - Never financial distress = never forced selling
+   - Can increase return to shareholders if needed
 
-4. **Reasonable Valuation (P/E {per:.1f}x)**:
-   - Margin of safety exists at current levels
-   - Quality doesn't command premium price
-   - Long-term compounding potential attractive
+4. **Valuation Offers Margin of Safety (P/E {per:.1f}x)**:
+   - Quality businesses need not be expensive
+   - Multiple compression unlikely if moat persists
+   - Decades of compounding ahead
 
-**Buffett Verdict**: BUY — Hold for long term, reinvest dividends, let compounding work
+**Buffett Verdict**: BUY — Own for 30+ years, reinvest dividends, avoid selling
 """
         return case.strip()
     
@@ -102,28 +105,30 @@ This company exhibits classic moat characteristics:
         case = f"""
 🦉 **Buffett Bear Case for {ticker}**
 
-This investment fails moat quality criteria:
+No durable moat visible—this is a commodity business, not a franchise.
 
-1. **ROE Concerns (ROE {roe:.1f}%)**:
-   - ROE insufficient to justify premium holding
-   - Business may lack true competitive advantage
-   - Returns may not justify long-term capital deployment
+1. **Weak ROE (ROE {roe:.1f}%)**:
+   📖 "If a business earns 5% ROE, it destroys shareholder value at 10% cost of capital"
+   - Insufficient returns on reinvested capital
+   - No competitive advantage—business is replaceable
+   - Capital allocation destroying value, not creating it
 
-2. **Dividend Sustainability Risk (Yield {dy:.2f}%)**:
-   - Payout ratio unsustainable in downturns
-   - High yield may signal desperation, not strength
-   - Dividend cuts possible if business faces pressure
+2. **Dividend as Warning Signal (Yield {dy:.2f}%)**:
+   - High yield may indicate deteriorating business
+   - Management returning capital because reinvestment unprofitable
+   - Dividend cut likely if business weakens further
 
-3. **Leverage Approaching Limits (D/E {der:.2f}x)**:
-   - Limited flexibility for challenges ahead
-   - Restricted ability to invest in moat expansion
-   - Vulnerable to recession
+3. **Leverage Limits Flexibility (D/E {der:.2f}x)**:
+   - Debt restricts ability to invest through downturns
+   - Vulnerable to recession = forced selling
+   - Cannot compound capital long-term
 
-4. **Valuation Premium Not Justified (P/E {per:.1f}x)**:
-   - Quality premium cannot be supported by fundamentals
-   - Better opportunities exist at lower risk/reward
+4. **Valuation Does Not Compensate (P/E {per:.1f}x)**:
+   - Price not cheap enough to offset mediocre business quality
+   - Better moats available at similar or lower prices
+   - Opportunity cost of capital deployment is real
 
-**Buffett Verdict**: PASS — Wait for better entry or find superior moat
+**Buffett Verdict**: PASS — Seek superior moats, avoid mediocrity at any price
 """
         return case.strip()
 
@@ -147,28 +152,32 @@ class GrahamPersona(PersonaStyle):
         case = f"""
 📚 **Graham Bull Case for {ticker}**
 
-Adequate margin of safety exists:
+Deep value opportunity with adequate margin of safety.
 
-1. **Deep Value Metrics (P/E {per:.1f}x, P/BV {pbv:.2f}x)**:
-   - Trading below intrinsic value with safety margin
-   - Downside protection substantial at current prices
-   - Mathematical edge favors investment
+1. **Trading Below Intrinsic Value (P/E {per:.1f}x, P/BV {pbv:.2f}x)**:
+   📖 "The margin of safety is the foundation of sound investing"
+   - Price substantially discounted from calculated intrinsic value
+   - Buffer against analysis errors and future disappointments
+   - Graham's cigar-butt: buy dollar for 50 cents, collect yield
 
-2. **Balance Sheet Safety (D/E {der:.2f}x)**:
-   - Conservative debt levels provide bankruptcy protection
-   - Asset coverage strong relative to debt
-   - Company can weather extended downturn
+2. **Strong Balance Sheet (D/E {der:.2f}x)**:
+   📖 "Evaluate the balance sheet first—avoid financial distress risk"
+   - Conservative leverage = ability to weather any downturn
+   - Asset coverage exceeds debt obligations
+   - Can service obligations from operations indefinitely
 
-3. **Dividend Yield ({dy:.2f}%)**:
-   - Income component provides return cushion
-   - Dividend provides evidence of real earnings
-   - Cash generation validated by shareholder distributions
+3. **Dividend Validation (Yield {dy:.2f}%)**:
+   📖 "Dividends prove real earnings exist; they cannot be faked"
+   - Distributions demonstrate actual cash flow generation
+   - Income provides return while waiting for reversion
+   - Sustainable payout from strong cash generation
 
-4. **Price vs Intrinsic Value**:
-   - Sufficient margin of safety to overcome analysis errors
-   - Graham's cigar-butt approach: buy dollar for 50 cents
+4. **Mathematical Edge**:
+   - Downside protected by valuation floor
+   - Upside from reversion to mean or intrinsic value
+   - Risk/reward asymmetry favorable to buyer
 
-**Graham Verdict**: BUY — Margin of safety adequate, downside protected
+**Graham Verdict**: BUY — Margin of safety adequate, mechanical investing advantage
 """
         return case.strip()
     
@@ -181,28 +190,32 @@ Adequate margin of safety exists:
         case = f"""
 📚 **Graham Bear Case for {ticker}**
 
-Inadequate margin of safety:
+Margin of safety insufficient—valuation not discounted enough.
 
-1. **Valuation Concerns (P/E {per:.1f}x, P/BV {pbv:.2f}x)**:
-   - Price reflects fair value already, not discount
-   - Insufficient margin of safety for Graham's requirements
-   - Risk/reward unfavorable at current levels
+1. **Insufficient Discount (P/E {per:.1f}x, P/BV {pbv:.2f}x)**:
+   📖 "If you cannot calculate a margin of safety, do not buy the security"
+   - Current price approaches intrinsic value estimate
+   - Insufficient buffer for estimation errors
+   - Downside protection evaporates if fundamentals deteriorate slightly
 
-2. **Balance Sheet Red Flags (D/E {der:.2f}x)**:
-   - Leverage approaching concerning levels
-   - Debt service burden may pressure dividends
-   - Limited room for negative surprise
+2. **Balance Sheet Deteriorating (D/E {der:.2f}x)**:
+   📖 "Avoid companies where debt service is uncertain"
+   - Leverage limiting financial flexibility
+   - Debt service burden may pressure distributions
+   - Vulnerability in recession unacceptable
 
-3. **Dividend Sustainability Questions (Yield {dy:.2f}%)**:
-   - Payout ratio leaves little margin for earnings decline
-   - Dividend cut risk material if earnings fall
+3. **Dividend Sustainability Risk (Yield {dy:.2f}%)**:
+   📖 "Real earnings support dividends; unsustainable payouts are red flags"
+   - Payout ratio leaves minimal margin for earnings decline
+   - Dividend cut likely if business faces headwinds
+   - Income return illusory if cut is imminent
 
-4. **Intrinsic Value Below Market Price**:
-   - No margin of safety exists
+4. **No Margin of Safety**:
    - Violates Graham's foundational principle
-   - Better opportunities available with greater discounts
+   - Risk/reward unfavorable at current price
+   - Better opportunities exist with greater discounts
 
-**Graham Verdict**: PASS — Insufficient margin of safety, wait for lower price
+**Graham Verdict**: PASS — Wait for lower price, margin of safety non-existent
 """
         return case.strip()
 
@@ -226,29 +239,32 @@ class LynchPersona(PersonaStyle):
         case = f"""
 🎯 **Lynch Bull Case for {ticker}**
 
-This is a simple, understandable business with growth:
+Simple, understandable business with sustainable growth—a tenbagger candidate.
 
 1. **Strong ROE (ROE {roe:.1f}%)**:
-   - Company reinvests profitably into growth
-   - Unit economics sound and sustainable
-   - Growth from operational excellence, not financial engineering
+   📖 "A company with high ROE reinvests those earnings at high rates—that's where real value comes from"
+   - ROE proves unit economics are sound
+   - Reinvestment compound at high rates over decades
+   - Growth funded organically, not through dilution
 
-2. **Reasonable Growth Valuation (P/E {per:.1f}x)**:
-   - P/E/Growth ratio attractive
-   - Growth opportunities priced reasonably
-   - Lynch's "tenbagger" candidates start here
+2. **Attractive GARP Valuation (P/E {per:.1f}x)**:
+   📖 "Growth at a reasonable price is where the real money is made"
+   - P/E to growth ratio favorable
+   - Stock priced for reasonable growth, not pie-in-sky
+   - Room for multiple expansion if growth accelerates
 
 3. **Book Value Discount (P/BV {pbv:.2f}x)**:
-   - Trading below intrinsic book value
-   - Conservative balance sheet supporting growth
-   - Room for multiple expansion
+   - Trading below tangible book value
+   - Conservative balance sheet supports growth
+   - Upside from multiple expansion as quality recognized
 
-4. **Income Plus Growth (DY {dy:.2f}%)**:
-   - Dividend provides income while waiting for growth
-   - Best of both worlds: income + appreciation potential
-   - Understandable business model
+4. **Income + Growth (Dividend {dy:.2f}%)**:
+   📖 "The best investments are simple businesses you can understand that also pay you to wait"
+   - Dividend provides income cushion during volatility
+   - Growth funds both appreciation and distribution growth
+   - Understandable business model = predictable returns
 
-**Lynch Verdict**: BUY — Simple, understandable, good growth/value balance
+**Lynch Verdict**: BUY — Tenbagger potential, simple story, reinvestment quality
 """
         return case.strip()
     
@@ -261,29 +277,32 @@ This is a simple, understandable business with growth:
         case = f"""
 🎯 **Lynch Bear Case for {ticker}**
 
-Growth story doesn't hold up:
+Growth story breaking down—this is a value trap, not a tenbagger.
 
 1. **ROE Insufficient for Growth (ROE {roe:.1f}%)**:
-   - Return on equity insufficient to fund growth
-   - Organic growth hampered by profitability constraints
-   - May resort to dilutive financing
+   📖 "If ROE doesn't support the expected growth rate, the company will need to raise capital and dilute shareholders"
+   - ROE inadequate to fund organic growth
+   - Company will resort to dilutive equity issuance
+   - Growth funded by shareholder dilution, not profitability
 
-2. **Valuation Doesn't Reflect Growth (P/E {per:.1f}x)**:
-   - P/E/Growth ratio unfavorable
-   - Growth prospects already priced in
-   - Limited upside to multiple expansion
+2. **Valuation Doesn't Justify Growth (P/E {per:.1f}x)**:
+   📖 "When P/E to growth ratio exceeds 2.0, the market is pricing in too much perfection"
+   - P/E/Growth ratio unattractive
+   - Growth expectations already priced in
+   - Multiple compression risk if growth disappoints
 
 3. **Book Value Premium (P/BV {pbv:.2f}x)**:
-   - Trading above book suggests market pricing in troubles
-   - Growth not materializing as expected
+   - Trading above book value
+   - Market skeptical of ability to deploy capital profitably
    - Reversion risk to lower multiples
 
-4. **Dividend a Warning Sign (DY {dy:.2f}%)**:
-   - High yield may indicate slow growth ahead
-   - Management allocating to dividends instead of growth reinvestment
-   - Better growth candidates elsewhere
+4. **Dividend Warning Signal (DY {dy:.2f}%)**:
+   📖 "High dividend yield while growth is expected? That's a red flag—management paying to quiet shareholders"
+   - High payout indicates weak reinvestment opportunities
+   - Management shifting to distributions instead of investing
+   - Better growth opportunities elsewhere
 
-**Lynch Verdict**: PASS — Growth story deteriorating, limited upside
+**Lynch Verdict**: PASS — Growth slowing, valuation extended, better candidates exist
 """
         return case.strip()
 
@@ -307,29 +326,33 @@ class MungerPersona(PersonaStyle):
         case = f"""
 🧠 **Munger Bull Case for {ticker}**
 
-Predictable business with acceptable risk:
+Predictable, simple business with minimal risk—perfect for sit-and-wait compounding.
 
 1. **Conservative Leverage (D/E {der:.2f}x)**:
-   - Risk profile minimal due to low debt
-   - Predictable cash flows support business
-   - No financial distress risk for a decade
+   📖 "We want to buy only where the business has durable competitive advantages"
+   - Low debt = predictable cash flows
+   - No financial distress risk for indefinite horizon
+   - Financial flexibility to capitalize on opportunities
 
 2. **Proven Profitability (ROE {roe:.1f}%)**:
-   - Consistent return on capital demonstrates business predictability
-   - Simple business model easy to understand
-   - Avoid complexity — embrace predictability
+   📖 "The best business to own is one that produces steady returns on capital with minimal capital requirements"
+   - Consistent ROE demonstrates business predictability
+   - Simple model easy to understand and forecast
+   - Avoid complexity that breeds mistakes
 
 3. **Reasonable Valuation (P/BV {pbv:.2f}x, P/E {per:.1f}x)**:
-   - No speculation required, just simple compounding
-   - Margin of safety exists
-   - Prices paid for simplicity and predictability
+   📖 "If something is too hard to understand, we don't do it. We don't worry about stocks we don't understand"
+   - No speculation required, only simple compounding
+   - Margin of safety exists in valuations
+   - Price reasonable for quality and certainty
 
 4. **Risk/Reward Asymmetric**:
-   - Downside protected by fundamentals
+   📖 "The three most important words in investing are 'I don't know'"
+   - Downside protected by conservative fundamentals
    - Upside from dividend growth and compounding
-   - Munger's "sit on your ass" investing approach
+   - Munger's "sit on your ass" investing pays off
 
-**Munger Verdict**: BUY — Simple, predictable, low risk, let it compound
+**Munger Verdict**: BUY — Simple, predictable, low risk, compound for decades
 """
         return case.strip()
     
@@ -342,29 +365,33 @@ Predictable business with acceptable risk:
         case = f"""
 🧠 **Munger Bear Case for {ticker}**
 
-Risk profile unacceptable:
+Too risky and too complex—this violates Munger's core principles.
 
 1. **Leverage Approaching Limits (D/E {der:.2f}x)**:
-   - Debt levels limit business predictability
-   - Financial stress in downturn possible
+   📖 "Debt is dangerous. We want to own only simple, predictable businesses with minimal financial risk"
+   - Debt levels threaten cash flow predictability
+   - Financial stress in downturn highly probable
    - Less margin for operational mistakes
 
 2. **Profitability Deteriorating (ROE {roe:.1f}%)**:
+   📖 "When ROE declines, management is destroying capital, not creating it"
    - Return on capital insufficient
-   - Business lacking pricing power
-   - Competitive position weakening
+   - Business lacking competitive advantages
+   - Competitive position weakening = future pressure
 
-3. **Valuation Premium for Risk (P/BV {pbv:.2f}x, P/E {per:.1f}x)**:
-   - Paying too much for unpredictable outcome
-   - Simplicity no longer applies
-   - Risk/reward unfavorable
+3. **Valuation Premium for Uncertainty (P/BV {pbv:.2f}x, P/E {per:.1f}x)**:
+   📖 "We only buy when there's a significant margin of safety"
+   - Paying premium for unpredictable outcome
+   - Business complexity high, clarity low
+   - Risk/reward unfavorable at current price
 
 4. **Better Opportunities Exist**:
-   - Munger principle: "If it's too hard to understand, don't buy it"
-   - Business complexity high, predictability low
-   - Capital better deployed elsewhere
+   📖 "If it's too hard to understand, don't buy it. We simply don't buy what we don't understand"
+   - Business complexity violates investment principle
+   - Predictability insufficient for Munger discipline
+   - Capital better deployed in simpler, safer situations
 
-**Munger Verdict**: PASS — Too complex, too risky, insufficient returns
+**Munger Verdict**: PASS — Too risky, too complex, insufficient predictability
 """
         return case.strip()
 
@@ -388,30 +415,33 @@ class IDXValueGuruPersona(PersonaStyle):
         case = f"""
 🇮🇩 **Indonesia Value Guru Bull Case for {ticker}**
 
-Tailwinds from policy and macro environment:
+BUMN tailwinds + macro sweetspot = textbook value opportunity.
 
-1. **BUMN Policy Tailwinds (P/E {per:.1f}x)**:
-   - Government supporting strategic sectors
-   - State-owned or strategic partner advantage
-   - Policy favorability improving sector dynamics
+1. **BUMN Policy Support (P/E {per:.1f}x)**:
+   📖 Indonesian government prioritizes BUMN dividend income for fiscal budget
+   - Strategic sector support through policy (Prabowo infrastructure mandate)
+   - State guarantee of dividend continuity
+   - Export volume targets supporting commodity BUMN
 
-2. **Dividend Stability (DY {dy:.2f}%)**:
-   - Government dividend requirements ensure distributions
-   - BUMN dividend policy supports shareholder returns
-   - Income stability better than private sector
+2. **Dividend Security (DY {dy:.2f}%)**:
+   📖 BUMN dividend is politically locked-in source for government revenue
+   - Government cannot cut dividends without political backlash
+   - Payout more stable than private sector
+   - Q4/Q1 seasonal peaks historically reliable
 
-3. **Macro Momentum (D/E {der:.2f}x, ROE {roe:.1f}%)**:
-   - Strong commodity prices (coal, nickel, CPO, oil)
-   - Rupiah supported by BI rate defense
-   - Economic growth above trend
-   - Mining/energy/agriculture benefiting
+3. **Macro Sweet Spot (D/E {der:.2f}x, ROE {roe:.1f}%)**:
+   - Commodity supercycle still strong: coal (PTBA), nickel (INCO), CPO (TAPG)
+   - BI rate elevated but stabilizing—doesn't hurt earnings
+   - Rupiah resilience from SBN flows + BI defense
+   - Economic growth buffering demand
+   - Mining/energy/agriculture exporters benefiting from global recovery
 
-4. **Seasonal Patterns**:
-   - Dividend payout peaks Q4/Q1
-   - Earnings seasonality favorable
-   - Historically strong during this period
+4. **Seasonal Seasonality Tailwind**:
+   - Dividend payout Q4/Q1 historically supports prices
+   - Earnings momentum typically peaks in Q1 reporting
+   - Historically strong: December-February entry window
 
-**Guru Verdict**: BUY — Government support, macro tailwinds, dividend security
+**Guru Verdict**: BUY — Policy locked, dividends secure, macro window open
 """
         return case.strip()
     
@@ -424,30 +454,37 @@ Tailwinds from policy and macro environment:
         case = f"""
 🇮🇩 **Indonesia Value Guru Bear Case for {ticker}**
 
-Policy risks and macro headwinds emerging:
+Policy risks materializing + macro cycle deteriorating = exit window closing.
 
-1. **BUMN Policy Risk (P/E {per:.1f}x)**:
-   - Government policy shifts can reverse fortunes
-   - Export restrictions (Prabowo BUMN mandate) pressure commodities
-   - Regulatory uncertainty increasing
+1. **BUMN Policy Reversal Risk (P/E {per:.1f}x)**:
+   📖 Prabowo administration shifting focus from dividend extraction to debt reduction
+   - Export restrictions on commodities (coal ban, nickel moratoria discussions) pressuring BUMN earnings
+   - Dividend cuts likely if fiscal consolidation accelerates
+   - Policy volatility = unpredictable earnings
+   - Strategic sector no longer guaranteed winner
 
-2. **Dividend Cuts Risk (DY {dy:.2f}%)**:
-   - Government may reduce dividend to fund debt reduction
-   - Fiscal consolidation underway
-   - Dividend policy subject to political pressure
+2. **Dividend Cut Imminent (DY {dy:.2f}%)**:
+   📖 Government fiscal position tightening—dividend policy is variable, not fixed
+   - Fiscal deficit widening forces dividend reduction decisions
+   - SBN issuance costs rising = less willingness to finance from dividends
+   - BUMN dividend typically first casualty in fiscal consolidation
+   - High yield today = dividend cut announcement tomorrow
 
-3. **Macro Deteriorating (D/E {der:.2f}x, ROE {roe:.1f}%)**:
-   - Commodity supercycle ending, price weakness ahead
-   - BI tightening cycle limiting growth
-   - Rupiah depreciation pressuring importers
-   - Economic slowdown evident
+3. **Macro Cycle Peak Passing (D/E {der:.2f}x, ROE {roe:.1f}%)**:
+   - Commodity supercycle already pricing in recovery expectations
+   - Coal prices peak: weather-dependent demand weak Q2-Q3
+   - Nickel inventory building: price weakness ahead
+   - Rupiah depreciation risk if BI loosens (growth vs stability trade-off)
+   - Economic slowdown evident in slowing credit growth
 
-4. **Seasonal Weakness**:
-   - Post-dividend decline typical
-   - Earnings likely to disappoint next quarter
-   - Seasonal low approaching
+4. **Seasonal Weakness Approaching**:
+   📖 Post-dividend Q2-Q3 historically weak for Indonesian stocks
+   - Dividend distributions complete by Feb—no buying support thereafter
+   - Earnings announcements likely to disappoint (beat expectations difficult)
+   - Seasonal low typically Feb-May for commodity exporters
+   - Better entry points likely in 3-4 months
 
-**Guru Verdict**: PASS — Policy headwinds, macro deteriorating, dividend at risk
+**Guru Verdict**: PASS — Policy headwinds emerging, macro peak passing, dividend at risk
 """
         return case.strip()
 

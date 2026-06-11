@@ -229,11 +229,15 @@ class EnhancedIDXAnalyst:
                 if dividends:
                     historical_dividends_map[ticker] = dividends
                 
-                # Format output
+                # Format output: compact for Telegram, save full debate separately
                 if format_style == "full":
                     output += self.format_output_rti(result) + "\n\n"
+                    # Also save full debate to separate file
+                    self._save_full_debate(ticker, result)
                 else:
                     output += self.format_output_telegram_compact(result) + "\n\n"
+                    # Still save full debate for reference
+                    self._save_full_debate(ticker, result)
                 
             except Exception as e:
                 print(f"❌ Error analyzing {ticker}: {e}", file=sys.stderr)
@@ -253,6 +257,64 @@ class EnhancedIDXAnalyst:
         output += "\n" + self.memory_logger.format_memory_summary()
         
         return output
+    
+    def _save_full_debate(self, ticker: str, result: Dict[str, Any]) -> None:
+        """Save full debate transcript to debate results file"""
+        try:
+            debate_result = result.get("debate_result", {})
+            if not debate_result.get("debate_rounds"):
+                return
+            
+            # Build full debate text
+            debate_text = f"🎓 FULL DEBATE TRANSCRIPT — {ticker}\n"
+            debate_text += "=" * 80 + "\n"
+            debate_text += f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S WIB')}\n"
+            debate_text += f"Signal: {debate_result.get('final_signal', 'HOLD')} (Confidence: {debate_result.get('confidence', 'MEDIUM')})\n"
+            debate_text += f"Bull win rate: {debate_result.get('bull_win_rate', 0.5):.0%}\n\n"
+            
+            # Full debate rounds
+            for r in debate_result.get("debate_rounds", []):
+                debate_text += f"\n{'='*80}\n"
+                debate_text += f"ROUND {r.round_num}\n"
+                debate_text += f"{'='*80}\n\n"
+                
+                persona_emoji_map = {
+                    "buffett": "🦉", "graham": "📚", "lynch": "🎯", 
+                    "munger": "🧠", "guru_id": "🇮🇩"
+                }
+                
+                bull_emoji = persona_emoji_map.get(r.bull_persona, "🦉")
+                bear_emoji = persona_emoji_map.get(r.bear_persona, "📚")
+                
+                debate_text += f"{bull_emoji} **{r.bull_persona.upper()} (BULL)**\n"
+                debate_text += f"Confidence: {r.bull_confidence}\n"
+                debate_text += f"{r.bull_argument}\n\n"
+                
+                debate_text += f"{bear_emoji} **{r.bear_persona.upper()} (BEAR)**\n"
+                debate_text += f"Confidence: {r.bear_confidence}\n"
+                debate_text += f"{r.bear_argument}\n"
+            
+            debate_text += f"\n{'='*80}\n"
+            debate_text += f"CONSENSUS\n"
+            debate_text += f"{'='*80}\n"
+            debate_text += debate_result.get("consensus_summary", "Debate concluded") + "\n"
+            
+            # Save to file
+            debate_dir = Path("~/.hermes/profiles/pagupon-finance/debates").expanduser()
+            debate_dir.mkdir(parents=True, exist_ok=True)
+            
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            debate_file = debate_dir / f"debate_{ticker}_{timestamp}.txt"
+            
+            with open(debate_file, "w") as f:
+                f.write(debate_text)
+            
+            if self.debug:
+                print(f"   Debate saved: {debate_file}", file=sys.stderr)
+        
+        except Exception as e:
+            if self.debug:
+                print(f"   ⚠️ Debate save failed for {ticker}: {e}", file=sys.stderr)
     
     def _fetch_stock_data(self, ticker: str) -> Dict[str, Any]:
         """Fetch stock data from yfinance (fallback)"""

@@ -221,6 +221,23 @@ class IDXDataScraper:
             stock = yf.Ticker(f"{ticker}.JK")
             info = stock.info
             
+            # yfinance returns INCONSISTENT formats:
+            # - dividendYield, profitMargin: already percentages (11.2 = 11.2%, not 0.112)
+            # - returnOnEquity, returnOnAssets: decimals (0.21 = 21%)
+            # So we need to handle each carefully
+            
+            dy_raw = info.get("dividendYield", 0)
+            dy = dy_raw if dy_raw > 1 else (dy_raw * 100 if dy_raw > 0 else 0)  # Already %, no multiply
+            
+            roe_raw = info.get("returnOnEquity", 0)
+            roe = (roe_raw * 100) if roe_raw <= 1 else roe_raw  # Decimal format, multiply by 100
+            
+            roa_raw = info.get("returnOnAssets", 0)
+            roa = (roa_raw * 100) if roa_raw <= 1 else roa_raw
+            
+            npm_raw = info.get("profitMargin", 0)
+            npm = npm_raw if npm_raw > 1 else (npm_raw * 100 if npm_raw > 0 else 0)
+            
             # Compile complete profile
             profile = {
                 "ticker": ticker,
@@ -237,12 +254,12 @@ class IDXDataScraper:
                 # Fundamentals
                 "per": round(info.get("trailingPE", 0), 2),
                 "pbv": round(info.get("priceToBook", 0), 2),
-                "roe": round(info.get("returnOnEquity", 100) * 100, 2),
-                "roa": round(info.get("returnOnAssets", 100) * 100, 2),
-                "npm": round(info.get("profitMargin", 100) * 100, 2),
+                "roe": round(roe, 2),
+                "roa": round(roa, 2),
+                "npm": round(npm, 2),
                 "eps": round(info.get("trailingEps", 0), 2),
                 "bv_per_share": round(info.get("bookValue", 0), 2),
-                "dy": round(info.get("dividendYield", 0) * 100, 2),
+                "dy": round(dy, 2),
                 "revenue_trn": int(info.get("totalRevenue", 0) / 1_000_000_000),
                 "net_income_trn": int(info.get("netIncome", 0) / 1_000_000_000),
                 "der": round(info.get("debtToEquity", 0), 2),
