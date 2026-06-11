@@ -1,22 +1,19 @@
 {
-  "enabled": true,
   "name": "Code Quality Review",
-  "description": "Analyzes modified source code for potential improvements including code smells, design patterns, and best practices. Generates suggestions for improving readability, maintainability, and performance while maintaining existing functionality.",
-  "version": "1",
+  "version": "1.0.0",
+  "description": "Analyzes modified Rust/Python source code for potential improvements including code smells, design patterns, and best practices specific to data pipeline development.",
   "when": {
     "type": "fileEdited",
     "patterns": [
-      "**/*.go",
-      "**/*.vue",
-      "**/*.js",
-      "**/*.ts",
-      "**/*.jsx",
-      "**/*.tsx",
-      "**/*.css"
+      "**/*.rs",
+      "**/*.py",
+      "**/Cargo.toml",
+      "**/*.yml",
+      "**/*.yaml"
     ]
   },
   "then": {
     "type": "askAgent",
-    "prompt": "Analyze the modified code for potential improvements. Focus on:\n1. Code smells (long methods, duplicated logic, magic numbers, deep nesting)\n2. Design patterns (suggest applicable patterns or flag misused ones)\n3. Best practices (error handling, naming conventions, SOLID principles)\n4. Readability (clarity of intent, comments where needed, consistent formatting)\n5. Maintainability (modularity, separation of concerns, testability)\n6. Performance optimizations (unnecessary allocations, N+1 queries, inefficient loops)\n\nProvide concise, actionable suggestions that maintain existing functionality. Prioritize the most impactful improvements."
+    "prompt": "Analyze the modified code for potential improvements. Focus on:\n1. Code smells (long methods, duplicated logic, magic numbers, deep nesting)\n2. Design patterns (pipeline phase pattern, Stats struct, \"never raises\" pattern)\n3. Best practices (error handling with anyhow/thiserror for Rust, try/except returning None for Python)\n4. Readability (clarity of intent, tracing logs with emoji convention, consistent formatting)\n5. Maintainability (modularity, separation of concerns, testability)\n6. Performance (unnecessary allocations, async patterns, proper use of iterators in Rust)\n7. Data integrity (SHA256 dedup, parameterized SQL, proper status tracking)\n\nProvide concise, actionable suggestions that maintain existing functionality. Prioritize the most impactful improvements."
   }
 }

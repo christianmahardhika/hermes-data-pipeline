@@ -45,6 +45,7 @@ async fn main() -> Result<()> {
         "prune" => run_prune(&config).await?,
         "social" => run_social(&config, &args).await?,
         "unlimited" => run_unlimited(&config, &args).await?,
+        "idx-analyst" => run_idx_analyst(&args).await?,
         _ => {
             println!("News Collector - Rust ETL Pipeline");
             println!();
@@ -61,6 +62,7 @@ async fn main() -> Result<()> {
             println!("  prune    Prune ingested records from SQLite");
             println!("  social   Run social intelligence collector");
             println!("  unlimited Run unlimited news daemon (Rust + TEI 768-dim)");
+            println!("  idx-analyst Run IDX stock analyst (5-persona debate)");
             println!();
             println!("Social subcommands:");
             println!("  social --query \"AI\" --depth quick");
@@ -356,5 +358,97 @@ async fn run_unlimited(config: &Config, args: &[String]) -> Result<()> {
 
     collector.run_daemon(interval_minutes).await?;
 
+    Ok(())
+}
+
+/// Run IDX stock analyst (5-persona debate engine)
+async fn run_idx_analyst(args: &[String]) -> Result<()> {
+    use news_collector::idx_analyst::{
+        IdxAnalyst, IdxConfig, data_source::mock_stock_data, formatter::RTIFormatter,
+    };
+
+    info!("📊 Starting IDX Analyst (5-persona debate engine)...");
+
+    let config = IdxConfig::default();
+
+    // Parse args
+    let mut tickers: Vec<String> = Vec::new();
+    let mut mock_mode = false;
+    let mut portfolio_mode = false;
+    let mut full_mode = false;
+
+    let mut i = 2;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--mock" => { mock_mode = true; i += 1; }
+            "--portfolio" => { portfolio_mode = true; i += 1; }
+            "--full" => { full_mode = true; i += 1; }
+            "--help" | "-h" => {
+                println!("IDX AI Analyst — 5-Persona Debate Engine (Rust)");
+                println!();
+                println!("Usage: news-collector idx-analyst [options] [TICKERS...]");
+                println!();
+                println!("Options:");
+                println!("  --mock       Use mock data (no network)");
+                println!("  --portfolio  Analyze all portfolio stocks");
+                println!("  --full       Full RTI Business format (vs compact)");
+                println!();
+                println!("Examples:");
+                println!("  news-collector idx-analyst BMRI BBRI --mock");
+                println!("  news-collector idx-analyst --portfolio --mock --full");
+                return Ok(());
+            }
+            other => {
+                if !other.starts_with('-') {
+                    tickers.push(other.to_uppercase());
+                }
+                i += 1;
+            }
+        }
+    }
+
+    // Determine tickers
+    if portfolio_mode || tickers.is_empty() {
+        tickers = news_collector::idx_analyst::PORTFOLIO_STOCKS
+            .iter().map(|s| s.to_string()).collect();
+    }
+
+    let analyst = IdxAnalyst::new(config)?;
+
+    for ticker in &tickers {
+        let stock_data = if mock_mode {
+            mock_stock_data(ticker)
+        } else {
+            // Try Yahoo Finance, fallback to mock
+            let source = news_collector::idx_analyst::data_source::YahooFinanceSource::new()?;
+            match source.fetch_fundamentals(ticker).await {
+                Ok(data) => data,
+                Err(e) => {
+                    tracing::warn!("⚠️ Yahoo failed for {}: {}, using mock", ticker, e);
+                    mock_stock_data(ticker)
+                }
+            }
+        };
+
+        match analyst.analyze_stock(ticker, &stock_data).await {
+            Ok(result) => {
+                if full_mode {
+                    println!("{}", RTIFormatter::format_full(
+                        &result.stock_data, &result.debate, &result.proposal, &result.risk
+                    ));
+                } else {
+                    println!("{}", RTIFormatter::format_telegram(
+                        &result.stock_data, &result.debate.final_signal
+                    ));
+                }
+                println!();
+            }
+            Err(e) => {
+                error!("❌ Failed to analyze {}: {}", ticker, e);
+            }
+        }
+    }
+
+    info!("✅ IDX Analyst complete!");
     Ok(())
 }

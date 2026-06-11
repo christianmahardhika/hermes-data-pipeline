@@ -1,8 +1,7 @@
 {
-  "enabled": true,
   "name": "Orchestrator Flow Reminder",
+  "version": "1.0.0",
   "description": "Saat agent submit prompt baru, remind Orchestrator untuk selalu mengikuti standard flow dan tidak skip steps. Pastikan context dari phase sebelumnya tersedia.",
-  "version": "1",
   "when": {
     "type": "promptSubmit"
   },

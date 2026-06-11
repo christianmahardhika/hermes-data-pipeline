@@ -63,6 +63,12 @@ uuid = { version = "1", features = ["v4"] }
 # Retry logic
 backoff = { version = "0.4", features = ["tokio"] }
 
+# Shell expansion (tilde in paths)
+shellexpand = "3"
+
+# Home directory resolution
+dirs = "5"
+
 [profile.release]
 opt-level = 3
 lto = true

@@ -18,6 +18,17 @@ news-social-intelligence-data-pipeline/
 │   ├── storage/mod.rs            # SQLite operations (raw, cleaned, labeled, ingested)
 │   └── health/mod.rs             # Kiromania health check + self-healing
 │
+├── src/idx_analyst/              # Enhanced IDX Stock Analyst (Rust port)
+│   ├── mod.rs                    # Orchestrator (IdxAnalyst struct)
+│   ├── config.rs                 # Portfolio tickers, criteria, risk/execution config
+│   ├── models.rs                 # StockData, Signal, Confidence enums
+│   ├── debate.rs                 # 5-persona bull/bear debate engine
+│   ├── trader.rs                 # Trade proposal (entry/stop/target)
+│   ├── risk.rs                   # Portfolio constraint validation
+│   ├── memory.rs                 # Decision logging to markdown
+│   ├── formatter.rs              # RTI Business + Telegram output
+│   └── data_source.rs            # Yahoo Finance API + mock data
+│
 ├── social_intel/                 # Python Social Media Pipeline
 │   ├── __init__.py               # Module exports
 │   ├── collector.py              # Unified collector (SentenceTransformer + Qdrant)

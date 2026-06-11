@@ -1,8 +1,7 @@
 {
-  "enabled": true,
   "name": "Pre-Write Standards Check",
-  "description": "Sebelum melakukan write operation pada file Go backend, validasi bahwa perubahan mengikuti coding standards: proper error handling, multi-tenancy scoping, input validation, dan security best practices.",
-  "version": "1",
+  "version": "1.0.0",
+  "description": "Sebelum melakukan write operation pada file Rust atau Python, validasi bahwa perubahan mengikuti coding standards project: error handling, security, naming conventions.",
   "when": {
     "type": "preToolUse",
     "toolTypes": [
@@ -11,6 +10,6 @@
   },
   "then": {
     "type": "askAgent",
-    "prompt": "Sebelum menulis file, validasi bahwa konten yang akan ditulis mengikuti standards:\n\n**Untuk file Go (.go)**:\n- ✅ Error handling: semua error di-check, tidak ada `_` untuk error returns\n- ✅ Multi-tenancy: query di-scope by business_id jika applicable\n- ✅ Input validation: validator tags atau manual validation ada\n- ✅ Security: tidak ada hardcoded secrets, parameterized queries\n- ✅ Naming: PascalCase exports, camelCase internal, proper acronyms (ID, URL, UUID)\n- ✅ Financial: int64 untuk Rupiah, guard zero-denominator\n\n**Untuk file Vue/JS (.vue, .js, .ts)**:\n- ✅ Composition API dengan `<script setup>`\n- ✅ Tidak ada v-html dengan raw user input\n- ✅ API calls via services/, bukan langsung di component\n- ✅ Proper error handling di async operations\n\nJika ada violation: BLOCK write dan jelaskan apa yang perlu diperbaiki.\nJika semua OK: proceed dengan write operation."
+    "prompt": "Sebelum menulis file, validasi bahwa konten yang akan ditulis mengikuti standards:\n\n**Untuk file Rust (.rs)**:\n- ✅ Error handling: gunakan `anyhow::Result` dan `?` operator, tidak ada `.unwrap()` di production code\n- ✅ Async: semua I/O operations async dengan tokio\n- ✅ Security: tidak ada hardcoded secrets, gunakan `std::env::var()`\n- ✅ Database: parameterized queries dengan `params![]` (rusqlite)\n- ✅ Naming: PascalCase untuk types/traits, snake_case untuk functions/methods, SCREAMING_SNAKE_CASE untuk constants\n- ✅ HTML sanitization: gunakan `ammonia::clean()` untuk user content\n- ✅ Logging: gunakan `tracing` macros (info!, warn!, error!) dengan emoji convention\n\n**Untuk file Python (.py)**:\n- ✅ \"Never raises\" pattern: public functions return empty/None on error, jangan propagate exceptions\n- ✅ Type hints pada semua function signatures\n- ✅ Error logging ke stderr via `_log()` helper\n- ✅ Security: tidak ada hardcoded API keys, gunakan `os.environ`\n- ✅ HTTP requests: selalu set timeout dan User-Agent\n- ✅ Naming: snake_case untuk functions/modules, PascalCase untuk classes, _prefix untuk private helpers\n- ✅ Output schema: normalized article dict dengan fields standar (id, title, url, description, source, etc.)\n\nJika ada violation: BLOCK write dan jelaskan apa yang perlu diperbaiki.\nJika semua OK: proceed dengan write operation."
   }
 }

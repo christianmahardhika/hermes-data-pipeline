@@ -1,8 +1,7 @@
 {
-  "enabled": true,
   "name": "Session Retrospective",
+  "version": "1.0.0",
   "description": "Menjalankan Retrospective skill setelah sesi agent selesai untuk menganalisis learnings dari sesi tersebut, mengupdate knowledge base di .kiro/steering/learnings.md, dan mengupgrade skill files berdasarkan patterns yang ditemukan.",
-  "version": "1",
   "when": {
     "type": "agentStop"
   },

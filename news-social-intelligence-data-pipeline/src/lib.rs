@@ -13,6 +13,7 @@ pub mod storage;
 pub mod health;
 pub mod social;
 pub mod unlimited;
+pub mod idx_analyst;
 
 pub use collectors::RssCollector;
 pub use cleaners::ArticleCleaner;

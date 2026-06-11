@@ -1,16 +1,15 @@
 {
-  "enabled": true,
-  "name": "Dockerfile Sync Check",
-  "description": "Saat go.mod berubah (dependency upgrade), otomatis cek apakah Go version berubah dan apakah Dockerfile perlu diupdate untuk match runtime base image.",
-  "version": "1",
+  "name": "Cargo Toml Sync Check",
+  "version": "1.0.0",
+  "description": "Saat Cargo.toml berubah (dependency upgrade), cek apakah Cargo.lock konsisten dan apakah docker-compose atau infrastructure config perlu diupdate.",
   "when": {
     "type": "fileEdited",
     "patterns": [
-      "backend/go.mod"
+      "**/Cargo.toml"
     ]
   },
   "then": {
     "type": "askAgent",
-    "prompt": "File go.mod baru saja berubah. Cek Dockerfile sync:\n\n1. **Baca go.mod** — cek `go` directive version (misal `go 1.23`)\n2. **Baca backend/Dockerfile** — cek base image version (misal `golang:1.23-alpine`)\n3. **Compare**:\n   - Jika go.mod version != Dockerfile base image version → UPDATE Dockerfile\n   - Cek juga runtime image (final stage) apakah compatible\n4. **Cek docker-compose files** jika ada version pinning yang perlu update\n5. **Jalankan `go mod tidy`** untuk pastikan go.sum konsisten\n\nJika ada mismatch:\n- Update Dockerfile base image sesuai go.mod version\n- Report perubahan yang dilakukan\n\nJika sudah sync:\n- Report: ✅ Dockerfile already in sync with go.mod"
+    "prompt": "File Cargo.toml baru saja berubah. Cek dependency sync:\n\n1. **Baca Cargo.toml** — cek dependencies yang berubah, rust-edition\n2. **Cek Cargo.lock** — apakah konsisten? Jalankan `cargo check` untuk validasi\n3. **Cek infrastructure/docker-compose.yml** — apakah ada service version yang perlu update (Qdrant, TEI, dll)\n4. **Cek breaking changes** — apakah dependency upgrade memerlukan code changes\n5. **Jalankan `cargo clippy`** untuk pastikan tidak ada warnings baru\n\nJika ada issue:\n- Report dependencies yang bermasalah\n- Suggest fix\n\nJika sudah sync:\n- Report: ✅ Cargo.toml consistent, no breaking changes detected"
   }
 }

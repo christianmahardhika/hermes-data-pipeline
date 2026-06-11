@@ -1,16 +1,18 @@
 {
-  "enabled": true,
-  "name": "Grep Model Consumers",
-  "description": "Saat file model Go (models/*.go) diedit, otomatis remind developer untuk grep semua downstream consumers: formatters, serializers, notifications, receipts, handlers yang menggunakan model tersebut.",
-  "version": "1",
+  "name": "Grep Struct and Schema Consumers",
+  "version": "1.0.0",
+  "description": "Saat file storage/lib Rust atau Python schema diedit, otomatis remind developer untuk grep semua downstream consumers yang menggunakan struct/schema tersebut.",
   "when": {
     "type": "fileEdited",
     "patterns": [
-      "backend/models/*.go"
+      "**/src/storage/*.rs",
+      "**/src/lib.rs",
+      "**/social_intel/lib/*.py",
+      "**/social_intel/__init__.py"
     ]
   },
   "then": {
     "type": "askAgent",
-    "prompt": "File model baru saja diedit. WAJIB cek downstream consumers:\n\n1. **Grep semua file yang import/menggunakan model ini**:\n   - `grep -r \"StructName\" backend/handlers/` — handlers yang pakai model\n   - `grep -r \"StructName\" backend/services/` — services yang pakai model\n   - `grep -r \"StructName\" backend/database/` — database operations\n   - Cek juga di frontend services/stores jika ada API response yang berubah\n\n2. **Identifikasi impact**:\n   - Apakah ada field baru yang perlu di-serialize ke JSON response?\n   - Apakah ada field yang dihapus yang masih direferensi?\n   - Apakah ada notification/receipt yang perlu update format?\n   - Apakah ada migration yang perlu dibuat?\n\n3. **Report**:\n   - List semua file yang terpengaruh\n   - Tandai mana yang perlu diupdate\n   - Jika ada breaking change, warn user\n\nJangan skip langkah ini — missing consumer update adalah sumber bug production yang umum."
+    "prompt": "File struct/schema baru saja diedit. WAJIB cek downstream consumers:\n\n1. **Untuk Rust structs** (di src/):\n   - Grep semua file yang `use` struct tersebut di collectors/, cleaners/, labelers/, embedders/\n   - Cek apakah SQLite schema di storage/mod.rs masih match\n   - Cek apakah Qdrant payload fields masih konsisten\n   - Cek apakah serde serialization masih valid\n\n2. **Untuk Python schemas** (di social_intel/):\n   - Grep semua file yang import dari lib/ atau __init__.py\n   - Cek apakah normalized article dict fields masih konsisten across all sources (hackernews, reddit, youtube)\n   - Cek apakah pipeline_integration.py masih compatible\n   - Cek apakah collector.py Qdrant ingestion masih match\n\n3. **Report**:\n   - List semua file yang terpengaruh\n   - Tandai mana yang perlu diupdate\n   - Jika ada breaking change pada article schema, warn user\n\nJangan skip — missing consumer update menyebabkan data loss di pipeline."
   }
 }
