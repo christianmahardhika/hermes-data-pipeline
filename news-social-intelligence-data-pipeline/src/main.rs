@@ -13,7 +13,7 @@
 
 use anyhow::Result;
 use news_collector::{
-    Config, RssCollector, ArticleCleaner, KiroLabeler, TeiEmbedder,
+    Config, RssCollector, ArticleCleaner, KiroLabeler, TeiEmbedder, UnlimitedCollector,
     storage::Database,
     health::{KiroHealth, SelfHealingMonitor},
 };
@@ -44,6 +44,7 @@ async fn main() -> Result<()> {
         "daemon" => run_daemon(&config).await?,
         "prune" => run_prune(&config).await?,
         "social" => run_social(&config, &args).await?,
+        "unlimited" => run_unlimited(&config, &args).await?,
         _ => {
             println!("News Collector - Rust ETL Pipeline");
             println!();
@@ -59,6 +60,7 @@ async fn main() -> Result<()> {
             println!("  daemon   Run as scheduled daemon (15min)");
             println!("  prune    Prune ingested records from SQLite");
             println!("  social   Run social intelligence collector");
+            println!("  unlimited Run unlimited news daemon (Rust + TEI 768-dim)");
             println!();
             println!("Social subcommands:");
             println!("  social --query \"AI\" --depth quick");
@@ -302,6 +304,57 @@ async fn run_social(config: &Config, args: &[String]) -> Result<()> {
         let stats = collector.collect_all(q, depth, None, store).await?;
         println!("\n📊 Social collection complete: {}", stats);
     }
+
+    Ok(())
+}
+
+/// Run unlimited news collector daemon (Rust + TEI 768-dim)
+async fn run_unlimited(config: &Config, args: &[String]) -> Result<()> {
+    info!("🚀 Starting unlimited news collector (Rust + TEI 768-dim)...");
+
+    // Parse args: --interval <minutes>
+    let mut interval_minutes: u64 = 15; // default 15 minutes
+
+    let mut i = 2;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--interval" | "-i" => {
+                if i + 1 < args.len() {
+                    interval_minutes = args[i + 1].parse().unwrap_or(15);
+                    i += 2;
+                } else {
+                    i += 1;
+                }
+            }
+            "--help" | "-h" => {
+                println!("Unlimited News Collector - Rust + TEI 768-dim");
+                println!();
+                println!("Usage: news-collector unlimited [options]");
+                println!();
+                println!("Options:");
+                println!("  --interval, -i <minutes>  Collection interval (default: 15)");
+                println!();
+                println!("Indonesian feeds: Tempo, CNN Indonesia, Antara, Republika, Merdeka, Tribunnews, Jpnn");
+                println!("International feeds: BBC Business/World, Reuters, Google News Business");
+                println!();
+                println!("Collections created:");
+                println!("  - indonesian_news_768 (768-dim vectors)");
+                println!("  - international_news_768 (768-dim vectors)");
+                return Ok(());
+            }
+            _ => {
+                i += 1;
+            }
+        }
+    }
+
+    let mut collector = UnlimitedCollector::new(
+        &config.tei_url,
+        &config.qdrant_url,
+        config.similarity_threshold,
+    ).await?;
+
+    collector.run_daemon(interval_minutes).await?;
 
     Ok(())
 }

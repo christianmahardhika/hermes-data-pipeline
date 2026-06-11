@@ -12,6 +12,7 @@ mod embedders;
 pub mod storage;
 pub mod health;
 pub mod social;
+pub mod unlimited;
 
 pub use collectors::RssCollector;
 pub use cleaners::ArticleCleaner;
@@ -19,6 +20,7 @@ pub use labelers::KiroLabeler;
 pub use embedders::TeiEmbedder;
 pub use storage::{Database, RawFeed, CleanedArticle, LabeledArticle};
 pub use health::KiroHealth;
+pub use unlimited::UnlimitedCollector;
 
 /// Pipeline configuration
 #[derive(Debug, Clone)]
