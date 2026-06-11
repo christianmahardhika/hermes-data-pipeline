@@ -38,9 +38,9 @@ const INDONESIAN_FEEDS: &[RssFeed] = &[
     RssFeed { name: "CNN Indonesia", url: "https://www.cnnindonesia.com/rss", category: FeedCategory::Indonesian },
     RssFeed { name: "Antara News", url: "https://www.antaranews.com/rss/terkini.xml", category: FeedCategory::Indonesian },
     RssFeed { name: "Republika", url: "https://www.republika.co.id/rss", category: FeedCategory::Indonesian },
-    RssFeed { name: "Merdeka", url: "https://www.merdeka.com/feed/", category: FeedCategory::Indonesian },
+    RssFeed { name: "Merdeka", url: "https://www.merdeka.com/feed", category: FeedCategory::Indonesian },
     RssFeed { name: "Tribunnews", url: "https://www.tribunnews.com/rss", category: FeedCategory::Indonesian },
-    RssFeed { name: "Jpnn", url: "https://www.jpnn.com/rss/news", category: FeedCategory::Indonesian },
+    RssFeed { name: "Sindonews", url: "https://www.sindonews.com/rss", category: FeedCategory::Indonesian },
 ];
 
 /// International RSS feeds
