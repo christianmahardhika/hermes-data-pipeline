@@ -13,6 +13,19 @@ use tracing::{info, warn, error};
 use crate::storage::{Database, CleanedArticle, LabeledArticle};
 use crate::health::KiroHealth;
 
+/// Safely truncate string at char boundary (avoids panic on multi-byte UTF-8)
+fn truncate_safe(s: &str, max_bytes: usize) -> &str {
+    if s.len() <= max_bytes {
+        return s;
+    }
+    // Find last valid char boundary at or before max_bytes
+    let mut end = max_bytes;
+    while end > 0 && !s.is_char_boundary(end) {
+        end -= 1;
+    }
+    &s[..end]
+}
+
 /// Prof Jiang BATCH extraction prompt (20 articles per request)
 const PROF_JIANG_BATCH_PROMPT: &str = r#"You are a JSON-only API. Return ONLY valid JSON array with no markdown, no code blocks, no explanation.
 
@@ -182,7 +195,7 @@ impl KiroLabeler {
         let articles_text: String = articles
             .iter()
             .enumerate()
-            .map(|(i, a)| format!("[{}] Title: {}\nContent: {}\n", i, a.title, &a.content[..a.content.len().min(500)]))
+            .map(|(i, a)| format!("[{}] Title: {}\nContent: {}\n", i, a.title, truncate_safe(&a.content, 500)))
             .collect::<Vec<_>>()
             .join("\n---\n");
 
@@ -228,7 +241,7 @@ impl KiroLabeler {
 
         // Parse JSON array output
         let outputs: Vec<ProfJiangOutput> = serde_json::from_str(cleaned)
-            .map_err(|e| anyhow::anyhow!("Failed to parse Kiro batch output: {} | Raw: {}", e, &cleaned[..cleaned.len().min(500)]))?;
+            .map_err(|e| anyhow::anyhow!("Failed to parse Kiro batch output: {} | Raw: {}", e, truncate_safe(cleaned, 500)))?;
 
         Ok(outputs)
     }
