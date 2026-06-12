@@ -24,10 +24,10 @@ struct YtDlpOutput {
     channel_id: Option<String>,
     upload_date: Option<String>, // "YYYYMMDD"
     timestamp: Option<i64>,
-    view_count: Option<i64>,
-    like_count: Option<i64>,
-    comment_count: Option<i64>,
-    duration: Option<i64>,
+    view_count: Option<f64>,
+    like_count: Option<f64>,
+    comment_count: Option<f64>,
+    duration: Option<f64>,
     categories: Option<Vec<String>>,
     tags: Option<Vec<String>>,
 }
@@ -110,8 +110,8 @@ fn parse_video(data: &YtDlpOutput, query: &str) -> Option<SocialArticle> {
         .unwrap_or("")
         .to_string();
 
-    let view_count = data.view_count.unwrap_or(0);
-    let comment_count = data.comment_count.unwrap_or(0);
+    let view_count = data.view_count.unwrap_or(0.0) as i64;
+    let comment_count = data.comment_count.unwrap_or(0.0) as i64;
 
     let tags: Vec<String> = data
         .tags
@@ -253,10 +253,10 @@ mod tests {
             channel_id: Some("UCuAXFkgsw1L7xaCfnd5JJOw".to_string()),
             upload_date: Some("20091025".to_string()),
             timestamp: Some(1256428800),
-            view_count: Some(1_500_000_000),
-            like_count: Some(15_000_000),
-            comment_count: Some(3_000_000),
-            duration: Some(212),
+            view_count: Some(1_500_000_000.0),
+            like_count: Some(15_000_000.0),
+            comment_count: Some(3_000_000.0),
+            duration: Some(212.0),
             categories: Some(vec!["Music".to_string()]),
             tags: Some(vec![
                 "rick astley".to_string(),
@@ -287,9 +287,9 @@ mod tests {
         let meta = &article.metadata;
         assert_eq!(meta["channel_id"], "UCuAXFkgsw1L7xaCfnd5JJOw");
         assert_eq!(meta["channel"], "Rick Astley");
-        assert_eq!(meta["duration"], 212);
-        assert_eq!(meta["view_count"], 1_500_000_000i64);
-        assert_eq!(meta["like_count"], 15_000_000);
+        assert_eq!(meta["duration"], 212.0);
+        assert_eq!(meta["view_count"], 1_500_000_000.0);
+        assert_eq!(meta["like_count"], 15_000_000.0);
     }
 
     #[test]
