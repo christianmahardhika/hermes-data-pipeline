@@ -120,8 +120,13 @@ def run_script(
     timeout: Optional[int] = None,
     workdir: Optional[Path] = None,
     existing_run_id: Optional[int] = None,
+    passthrough: bool = True,
 ) -> int:
-    """Run a script and capture output to SQLite."""
+    """Run a script and capture output to SQLite.
+    
+    If passthrough=True (default), also prints stdout to terminal.
+    This is important for Hermes cron no-agent jobs where stdout IS the delivery.
+    """
     conn = get_db(db_path)
     
     # Resolve script path
@@ -182,6 +187,10 @@ def run_script(
             for line in process.stdout:
                 line = line.rstrip('\n')
                 all_output.append(line)
+                
+                # Passthrough to stdout for Hermes cron integration
+                if passthrough:
+                    print(line)
                 
                 # Store log line (with truncation)
                 if line_count < MAX_LOG_LINES:
@@ -410,6 +419,8 @@ def main():
     run_parser.add_argument("args", nargs="*", help="Script arguments")
     run_parser.add_argument("--timeout", type=int, help="Timeout in seconds")
     run_parser.add_argument("--workdir", type=Path, help="Working directory")
+    run_parser.add_argument("-q", "--quiet", action="store_true", 
+                           help="Don't pass through stdout (log only)")
     
     # logs
     logs_parser = subparsers.add_parser("logs", help="View logs")
@@ -439,7 +450,8 @@ def main():
     if args.command == "run":
         exit_code = run_script(
             args.script, args.args, args.db,
-            timeout=args.timeout, workdir=args.workdir
+            timeout=args.timeout, workdir=args.workdir,
+            passthrough=not args.quiet
         )
         sys.exit(exit_code)
     
