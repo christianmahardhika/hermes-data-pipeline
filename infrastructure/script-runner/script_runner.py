@@ -135,9 +135,17 @@ def run_script(
         # Check common locations
         candidates = [
             Path.cwd() / script,
+            Path.cwd() / "scripts" / script,  # Profile scripts subdir
             Path.home() / ".hermes" / "scripts" / script,
             Path.home() / "hermes-data-pipeline" / script,
         ]
+        # Also check all profile script directories
+        profiles_dir = Path.home() / ".hermes" / "profiles"
+        if profiles_dir.exists():
+            for profile in profiles_dir.iterdir():
+                if profile.is_dir():
+                    candidates.append(profile / "scripts" / script)
+        
         for candidate in candidates:
             if candidate.exists():
                 script_path = candidate
