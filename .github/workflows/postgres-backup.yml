@@ -1,0 +1,157 @@
+# PostgreSQL Backup to GHCR Workflow
+# Runs daily at 02:00 UTC, weekly on Sundays at 03:00 UTC
+# Uses ORAS to push backups as OCI artifacts to GitHub Container Registry
+
+name: PostgreSQL Backup
+
+on:
+  schedule:
+    # Daily backup at 02:00 UTC (09:00 WIB)
+    - cron: '0 2 * * *'
+    # Weekly backup on Sunday at 03:00 UTC (10:00 WIB)
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      backup_type:
+        description: 'Backup type'
+        required: true
+        default: 'daily'
+        type: choice
+        options:
+          - daily
+          - weekly
+
+env:
+  REGISTRY: ghcr.io
+  PACKAGE_NAME: hermes-pipelines-backup
+  ORAS_VERSION: '1.2.0'
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine backup type
+        id: backup-type
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "type=${{ inputs.backup_type }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event.schedule }}" == "0 3 * * 0" ]]; then
+            echo "type=weekly" >> $GITHUB_OUTPUT
+          else
+            echo "type=daily" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate backup metadata
+        id: meta
+        run: |
+          TIMESTAMP=$(date -u +"%Y%m%d_%H%M%S")
+          DATE_TAG=$(date -u +"%Y%m%d")
+          BACKUP_TYPE="${{ steps.backup-type.outputs.type }}"
+          
+          echo "timestamp=${TIMESTAMP}" >> $GITHUB_OUTPUT
+          echo "date_tag=${DATE_TAG}" >> $GITHUB_OUTPUT
+          echo "backup_type=${BACKUP_TYPE}" >> $GITHUB_OUTPUT
+          echo "filename=hermes_pipelines_${BACKUP_TYPE}_${TIMESTAMP}.sql.gz" >> $GITHUB_OUTPUT
+          echo "tag=${BACKUP_TYPE}-${DATE_TAG}" >> $GITHUB_OUTPUT
+
+      - name: Install ORAS
+        run: |
+          curl -LO "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz"
+          tar -xzf "oras_${ORAS_VERSION}_linux_amd64.tar.gz"
+          sudo mv oras /usr/local/bin/
+          oras version
+
+      - name: Start PostgreSQL service
+        run: |
+          cd infrastructure
+          # Create .env from example if not exists
+          if [[ ! -f .env ]]; then
+            cp .env.example .env
+          fi
+          # Start postgres with full profile
+          docker compose --profile full up -d postgres
+          # Wait for postgres to be ready
+          echo "Waiting for PostgreSQL to be ready..."
+          for i in {1..30}; do
+            if docker compose --profile full exec -T postgres pg_isready -U hermes; then
+              echo "PostgreSQL is ready"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+
+      - name: Create backup
+        id: backup
+        env:
+          PGPASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: hermes
+          POSTGRES_DB: hermes_pipelines
+          BACKUP_TYPE: ${{ steps.meta.outputs.backup_type }}
+          BACKUP_DIR: /tmp/backups
+        run: |
+          chmod +x infrastructure/backup/backup.sh
+          BACKUP_PATH=$(infrastructure/backup/backup.sh)
+          echo "backup_path=${BACKUP_PATH}" >> $GITHUB_OUTPUT
+          
+          # Verify backup was created
+          ls -la "${BACKUP_PATH}"
+          
+          # Create checksum
+          sha256sum "${BACKUP_PATH}" > "${BACKUP_PATH}.sha256"
+
+      - name: Login to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | oras login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+      - name: Push backup to GHCR
+        run: |
+          BACKUP_PATH="${{ steps.backup.outputs.backup_path }}"
+          TAG="${{ steps.meta.outputs.tag }}"
+          FILENAME="${{ steps.meta.outputs.filename }}"
+          
+          # Push backup as OCI artifact with metadata annotations
+          oras push "${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.PACKAGE_NAME }}:${TAG}" \
+            --artifact-type "application/vnd.hermes.backup.postgres+gzip" \
+            --annotation "org.opencontainers.image.created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --annotation "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
+            --annotation "com.hermes.backup.type=${{ steps.meta.outputs.backup_type }}" \
+            --annotation "com.hermes.backup.database=hermes_pipelines" \
+            --annotation "com.hermes.backup.timestamp=${{ steps.meta.outputs.timestamp }}" \
+            "${BACKUP_PATH}:application/gzip" \
+            "${BACKUP_PATH}.sha256:text/plain"
+          
+          echo "✅ Backup pushed to: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.PACKAGE_NAME }}:${TAG}"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          cd infrastructure
+          docker compose --profile full down || true
+          rm -rf /tmp/backups
+
+  retention:
+    needs: backup
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Apply retention policy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x infrastructure/backup/retention.sh
+          infrastructure/backup/retention.sh
