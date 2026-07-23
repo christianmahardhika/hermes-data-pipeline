@@ -24,6 +24,12 @@ This file is maintained by the Retrospective Agent. It captures learnings from e
 **Learning**: All Hermes cron job metadata (job_id, schedule, command, status) should live in ONE canonical location: `docs/PIPELINE.md` under "Hermes Cron Jobs" section. When adding/modifying/pausing a cron job, update this section in the same commit. Don't rely on Notion for cron job tracking unless the bot integration is confirmed shared to the page.
 **Action Taken**: Added "Hermes Cron Jobs (Profile: pagupon-finance)" section to `docs/PIPELINE.md` with Active Jobs (3), Internal Daemons (2), Paused/Deprecated (5), and management commands reference.
 
+### Learning 57: After squash-merge PRs on GitHub, ALWAYS reset local main to origin/main before branching
+**Issue**: `git push` of `docs/data-pipeline` branch was blocked by GitHub Push Protection detecting Dynatrace token in commit `70e99e3`. This commit existed in local main but NOT in remote main (GitHub squashed it into `7bffd8a` during PR #8 merge). Even `git filter-branch` on the branch couldn't help because the commit was inherited from the local main base.
+**Root Cause**: After PR #8 was squash-merged on GitHub, local main still had the original pre-squash commits (`70e99e3` with the secret + merge commit `f8a3fe0`). Remote main jumped from `a49ae87` → `7bffd8a` (squash). Any new branch from local main inherited the poisoned commit.
+**Learning**: After squash-merging a PR on GitHub: (1) ALWAYS run `git checkout main && git pull --rebase` or `git reset --hard origin/main` before creating new branches. (2) If a push is blocked by secret scanning and `filter-branch` doesn't help, check if local main diverged from origin/main with `git log --oneline main` vs `git log --oneline origin/main`. (3) Fix: `git checkout main && git reset --hard origin/main && git checkout -b new-branch && git cherry-pick <clean-commit>`.
+**Action Taken**: Provided fix commands. Added to debugging.md as common issue.
+
 ## 2026-07-23 — GitHub Push Protection blocked push due to Dynatrace token in log file
 
 ### Learning 55: MCP server log files can contain API tokens — ALWAYS .gitignore them
