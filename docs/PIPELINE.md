@@ -232,14 +232,63 @@ USD/IDR (Bank Indonesia)     → import cost multiplier
 | Pipeline | Interval | Mode | Command |
 |----------|----------|------|---------|
 | RSS News (full cycle) | 15 min | Daemon | `cargo run -- daemon` |
+| Unlimited News | 15 min (configurable) | Daemon | `cargo run -- unlimited` |
 | Economic (all) | 1 hour | CLI/Cron | `cargo run -- economic all` |
-| Social Media | 2 hours | Cron | `python social_intel_cron.py` |
+| Social Media | 30 min | Cron | `python social_intel_cron.py` |
 | GDELT Events | 2 hours | Part of economic all | — |
 | Feed Health Check | Daily | GitHub Actions | `.github/workflows/feed-health.yml` |
-| Screener Fetch | 08:45 & 14:45 WIB | Cron | `screener-fetch-cron.sh` |
-| Screener Digest | 09:00 & 15:00 WIB | Cron | `screener-digest-cron.sh` |
-| IDX AI Analyst (digest) | 09:00 & 15:00 WIB | Cron | `cargo run -- idx-analyst digest` |
-| IDX AI Analyst (legacy) | Daily | Cron | `idx_ai_analyst_enhanced.sh` |
+| IDX AI Analyst (digest) | 09:00 & 15:00 WIB | Hermes Cron | `cargo run -- idx-analyst digest` |
+
+---
+
+## Hermes Cron Jobs (Profile: pagupon-finance)
+
+Active cron jobs registered in Hermes Agent platform.
+
+### Active Jobs
+
+| Job ID | Name | Schedule | Command | Notes |
+|--------|------|----------|---------|-------|
+| `2be1dce649c1` | Enhanced IDX AI Analyst — Portfolio | `0 9,15 * * 1-5` (09:00 & 15:00 WIB, weekdays) | `cargo run --release -- idx-analyst digest` | Replaces 3 legacy scripts (screener-fetch + screener-digest + accumulation digest) |
+| — | Advanced Portfolio Intelligence | `*/30 * * * *` (every 30 min) | `commodity_collector.py --once` | Strategic commodities (Coal, Palm, Nickel, Gold, Oil) |
+| — | Advanced Social Intelligence Collection | `0 */2 * * *` (every 2 hours) | `social_intel_cron.py --topics "Indonesia,BMRI,BBRI,INCO,ANTM,PTBA,TAPG,nickel,coal,palm oil" --depth default` | Multi-source social intelligence |
+
+### Internal Daemons (not Hermes cron, tokio loop)
+
+| Name | Interval | Command | Notes |
+|------|----------|---------|-------|
+| News Daemon | Every 15 min | `cargo run --release -- daemon` | Full 4-phase pipeline (collect → clean → label → embed) |
+| Unlimited News Daemon | Every 15 min (configurable via `--interval`) | `cargo run --release -- unlimited` | Indonesian + International RSS → TEI 768-dim |
+
+### Paused/Deprecated Jobs
+
+| Job ID | Name | Status | Reason |
+|--------|------|--------|--------|
+| `9925c31dcd78` | Indonesian News Collection | **PAUSED** | Replaced by advanced system (daemon + unlimited) |
+| `690a248a75c0` | International News Collection | **PAUSED** | Replaced by advanced system (daemon + unlimited) |
+| — | IDX Screener Fetch | **DEPRECATED** | Merged into `idx-analyst digest` (job `2be1dce649c1`) |
+| — | IDX Screener Digest | **DEPRECATED** | Merged into `idx-analyst digest` (job `2be1dce649c1`) |
+| — | Accumulation Digest | **DEPRECATED** | Merged into `idx-analyst digest` (job `2be1dce649c1`) |
+
+### Cron Management Commands
+
+```bash
+# List all cron jobs
+hermes cronjob list
+
+# Create new job
+hermes cronjob create --name "Job Name" --schedule "cron_expr" --script "command"
+
+# Pause/Resume
+hermes cronjob pause --job-id JOB_ID
+hermes cronjob resume --job-id JOB_ID
+
+# View logs
+hermes cronjob logs --job-id JOB_ID
+
+# Log location
+~/.hermes/profiles/pagupon-finance/cron/logs/JOB_ID.log
+```
 
 ---
 
