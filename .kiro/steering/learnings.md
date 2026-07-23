@@ -16,6 +16,55 @@ This file is maintained by the Retrospective Agent. It captures learnings from e
 
 <!-- New entries go here, above the line -->
 
+## 2026-07-23 — Merge screener-fetch + screener-digest into Rust pipeline `idx-analyst digest`
+
+### Learning 53: Adding CLI subcommands to existing match arms requires checking enum/type definitions first
+**Issue**: Initial implementation of `run_idx_digest` used `Signal::Neutral`, `Signal::Sell`, `Signal::StrongSell` which don't exist. The actual Signal enum has: `StrongBuy, Buy, Hold, Pass, Avoid`.
+**Root Cause**: Assumed generic trading signal names without checking the actual enum definition in `models.rs`. Different projects use different signal terminology.
+**Learning**: Before writing match arms on domain enums, ALWAYS grep for the enum definition (`pub enum Signal`) and confirm all variant names. In this project: `StrongBuy, Buy, Hold, Pass, Avoid` — NOT the typical `Neutral/Sell/StrongSell` from other trading systems.
+**Action Taken**: Fixed match arms. Build + 148 tests pass.
+
+### Learning 54: Merging shell script logic into Rust binary eliminates external binary dependency
+**Issue**: `screener-fetch-cron.sh` and `screener-digest-cron.sh` depended on an external `screener` binary at `~/.hermes/profiles/pagupon-finance/screener/target/debug/screener` (separate Rust project, not in this repo). This created a fragile deployment dependency.
+**Root Cause**: The screener was developed independently before the main pipeline had `src/idx_analyst/` module. After the Python→Rust port (Learning 31-32), the functionality was duplicated.
+**Learning**: When existing shell scripts wrap external binaries, and the main pipeline already has equivalent logic (fetch_fundamentals + debate engine + formatter), merge into a new subcommand. Pattern: `cargo run --release -- <existing-command> <new-subcommand>` keeps CLI ergonomic without adding top-level commands. In this case: `idx-analyst digest` = fetch all portfolio + debate + formatted output = replaces 2 shell scripts + 1 external binary dependency.
+**Action Taken**: Added `run_idx_digest()` in main.rs. Shell script reduced to 4 lines calling `cargo run --release -- idx-analyst digest`. External screener binary no longer needed for this workflow.
+
+## 2026-07-23 — Scripts-to-Pipeline Mapping Analysis
+
+### Learning 52: screener-fetch/digest depend on EXTERNAL binary — not part of this repo's Rust pipeline
+**Issue**: User asked to "jadiin 1" (consolidate) screener-fetch-cron.sh, screener-digest-cron.sh, idx_ai_analyst_enhanced.sh, and fundamental_analysis_check.py. Analysis revealed these have different dependency chains.
+**Root Cause**: The scripts/ directory contains wrappers for 3 distinct systems: (1) External screener binary at `~/.hermes/profiles/pagupon-finance/screener/` (Rust, separate repo), (2) `enhanced-idx-analyst/` Python module in this repo, (3) `hermes mcp call` CLI tool for MCP-based data fetching.
+**Learning**: Mapping of scripts to pipeline capabilities:
+- `screener-fetch-cron.sh` → Calls EXTERNAL `screener` binary (not in this repo). The Rust pipeline has `src/idx_analyst/data_source.rs::fetch_fundamentals()` which does similar Yahoo Finance fetching but for single tickers.
+- `screener-digest-cron.sh` → Calls EXTERNAL `screener digest` command. No equivalent in Rust pipeline — would need new `digest` subcommand.
+- `idx_ai_analyst_enhanced.sh` → Wraps `enhanced-idx-analyst/idx_ai_analyst_enhanced.py` (Python, in this repo). Rust pipeline has full port at `src/idx_analyst/` (debate.rs, trader.rs, risk.rs, formatter.rs) which does the SAME 5-persona debate.
+- `fundamental_analysis_check.py` → Uses `hermes mcp call` for data. Rust pipeline's `src/idx_analyst/data_source.rs` + `analyst.rs::fundamentals_analysis()` does the same criteria checking.
+Consolidation options: (A) single shell orchestrator that chains all 4, (B) merge logic into Rust pipeline as `cargo run -- idx-analyst full-cycle`, (C) keep separate but document dependency map. Decision pending user input.
+**Action Taken**: Documented mapping. Awaiting user decision on consolidation approach.
+
+## 2026-07-23 — Discovery: 17 New Cron Job Scripts from PR #7
+
+### Learning 51: pagupon-finance cron scripts are standalone — not integrated with main Rust pipeline
+**Issue**: PR #7 ("feat: add cron job scripts for portfolio data pipeline") added 17 scripts to `scripts/` directory. These are portfolio-focused: BUMN export monitoring, INCO deep dive, daily digests, stock alerts, sentiment analysis.
+**Root Cause**: These were developed independently in `~/.hermes/profiles/pagupon-finance/` and moved to the repo for version control and portability.
+**Learning**: Current state: (1) Scripts use mix of `openai`, `yfinance`, `requests`+`bs4`, and `hermes mcp call` — NOT integrated with ArangoDB intelligence graph, (2) Portfolio covers 14 tickers (KLBF, TLKM, BBRI, PTBA, BJTM, ADMF, TAPG, JPFA, TSPC, BMRI, ASII, ULTJ, HMSP, MNCN), (3) Screener is a separate Rust binary at `~/.hermes/profiles/pagupon-finance/screener/`, (4) Cron schedule: screener-fetch before 09:00 & 15:00 WIB, digest at 09:00 & 15:00 WIB. Future integration opportunity: feed these scripts' outputs INTO ArangoDB for correlation with news/economic data.
+**Action Taken**: Documented. structure.md needs update to reflect `scripts/` directory (17 files). No code changes — awaiting user decision on integration strategy.
+
+## 2026-07-23 — Coffee Commodity Addition (Pondo Ngopi COGS Intelligence)
+
+### Learning 50: Economic indicators need TTL/retention — server resources are limited
+**Issue**: User raised concern about storage waste from periodic commodity data collection. With 11 symbols × hourly = ~7,920 docs/month growing indefinitely.
+**Root Cause**: Current implementation always inserts new docs without cleanup. Server (likely single VPS) has limited disk/memory.
+**Learning**: For economic_indicators collection, implement data retention. Three options discussed: (1) Overwrite latest per symbol (11 docs total, zero growth), (2) TTL 7 days via ArangoDB TTL index (auto-expire, good balance), (3) On-demand only (fetch from Yahoo when needed, zero storage). Recommendation: TTL 7 days — enough for news correlation window, Yahoo historical available on-demand for backfill. ArangoDB supports native TTL indexes: `ensureIndex({type: "ttl", fields: ["timestamp"], expireAfter: 604800})`.
+**Action Taken**: Decision pending user choice. Document as future implementation item.
+
+### Learning 49: Adding new commodity symbols is purely additive — const array + test count update only
+**Issue**: User requested Coffee Arabica (`KC=F`) and Robusta (`RC=F`) to track COGS for Pondo Ngopi business. Needed to add to existing commodity collector without disrupting the 9-symbol setup.
+**Root Cause**: Business use case (F&B packaging + raw material cost tracking) driving data pipeline expansion.
+**Learning**: The `COMMODITY_SYMBOLS` const array in `yahoo_commodities.rs` is fully self-contained. Adding new commodities requires exactly 2 changes: (1) append `CommoditySymbol` entry to the array, (2) update `test_commodity_symbols_count` assertion. No other code changes needed — `collect_all()` iterates the array dynamically. Yahoo Finance symbols: `KC=F` (Arabica, ICE US, USc/lb), `RC=F` (Robusta, ICE London, USD/ton). Correlation context for Pondo Ngopi: Coffee → raw material COGS, Oil (CL=F, BZ=F) → PET packaging cost, USD/IDR → import multiplier.
+**Action Taken**: Added 2 coffee symbols (9 → 11 total). Build + 11 tests pass. product.md and tech.md already reflected the update.
+
 ## 2026-07-23 — News Source Resilience Full Spec Completion (20/20 Tasks)
 
 ### Learning 48: Full 20-task spec execution across multiple turns — tasks.md checkboxes as persistent state machine

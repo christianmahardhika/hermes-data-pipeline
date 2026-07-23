@@ -30,7 +30,8 @@ struct CommoditySymbol {
     related_tickers: &'static [&'static str],
 }
 
-/// All 9 commodity symbols relevant to Indonesian market
+/// All 11 commodity symbols relevant to Indonesian market & Pagupon portfolio
+/// Includes coffee futures for Pondo Ngopi cost intelligence (raw material + PET packaging via oil)
 const COMMODITY_SYMBOLS: &[CommoditySymbol] = &[
     CommoditySymbol {
         symbol: "GC=F",
@@ -83,6 +84,21 @@ const COMMODITY_SYMBOLS: &[CommoditySymbol] = &[
     CommoditySymbol {
         symbol: "ALI=F",
         name: "Aluminum",
+        unit: "USD/ton",
+        related_tickers: &[],
+    },
+    // Coffee futures — Pondo Ngopi COGS intelligence
+    // Arabica: specialty/single-origin grade
+    // Robusta: mass-market/blend/RTD/espresso grade
+    CommoditySymbol {
+        symbol: "KC=F",
+        name: "Coffee Arabica",
+        unit: "USc/lb",
+        related_tickers: &[],
+    },
+    CommoditySymbol {
+        symbol: "RC=F",
+        name: "Coffee Robusta",
         unit: "USD/ton",
         related_tickers: &[],
     },
@@ -472,7 +488,7 @@ mod tests {
 
     #[test]
     fn test_commodity_symbols_count() {
-        assert_eq!(COMMODITY_SYMBOLS.len(), 9);
+        assert_eq!(COMMODITY_SYMBOLS.len(), 11);
     }
 
     #[test]

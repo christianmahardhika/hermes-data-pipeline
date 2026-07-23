@@ -366,8 +366,17 @@ async fn run_unlimited(config: &Config, args: &[String]) -> Result<()> {
 /// Run IDX stock analyst (5-persona debate engine)
 async fn run_idx_analyst(args: &[String]) -> Result<()> {
     use news_collector::idx_analyst::{
-        IdxAnalyst, IdxConfig, data_source::mock_stock_data, formatter::RTIFormatter,
+        IdxAnalyst, IdxConfig, PORTFOLIO_STOCKS,
+        data_source::{mock_stock_data, YahooFinanceSource},
+        formatter::RTIFormatter,
     };
+
+    let sub = args.get(2).map(|s| s.as_str()).unwrap_or("");
+
+    // Subcommand: digest — unified fetch + analyze for cron
+    if sub == "digest" {
+        return run_idx_digest(args).await;
+    }
 
     info!("📊 Starting IDX Analyst (5-persona debate engine)...");
 
@@ -388,7 +397,10 @@ async fn run_idx_analyst(args: &[String]) -> Result<()> {
             "--help" | "-h" => {
                 println!("IDX AI Analyst — 5-Persona Debate Engine (Rust)");
                 println!();
-                println!("Usage: news-collector idx-analyst [options] [TICKERS...]");
+                println!("Usage: news-collector idx-analyst [subcommand] [options] [TICKERS...]");
+                println!();
+                println!("Subcommands:");
+                println!("  digest     Fetch + analyze all portfolio (cron mode)");
                 println!();
                 println!("Options:");
                 println!("  --mock       Use mock data (no network)");
@@ -398,6 +410,8 @@ async fn run_idx_analyst(args: &[String]) -> Result<()> {
                 println!("Examples:");
                 println!("  news-collector idx-analyst BMRI BBRI --mock");
                 println!("  news-collector idx-analyst --portfolio --mock --full");
+                println!("  news-collector idx-analyst digest");
+                println!("  news-collector idx-analyst digest --mock");
                 return Ok(());
             }
             other => {
@@ -411,8 +425,7 @@ async fn run_idx_analyst(args: &[String]) -> Result<()> {
 
     // Determine tickers
     if portfolio_mode || tickers.is_empty() {
-        tickers = news_collector::idx_analyst::PORTFOLIO_STOCKS
-            .iter().map(|s| s.to_string()).collect();
+        tickers = PORTFOLIO_STOCKS.iter().map(|s| s.to_string()).collect();
     }
 
     let analyst = IdxAnalyst::new(config)?;
@@ -421,8 +434,7 @@ async fn run_idx_analyst(args: &[String]) -> Result<()> {
         let stock_data = if mock_mode {
             mock_stock_data(ticker)
         } else {
-            // Try Yahoo Finance, fallback to mock
-            let source = news_collector::idx_analyst::data_source::YahooFinanceSource::new()?;
+            let source = YahooFinanceSource::new()?;
             match source.fetch_fundamentals(ticker).await {
                 Ok(data) => data,
                 Err(e) => {
@@ -452,6 +464,146 @@ async fn run_idx_analyst(args: &[String]) -> Result<()> {
     }
 
     info!("✅ IDX Analyst complete!");
+    Ok(())
+}
+
+/// Unified portfolio digest — fetch market data + run debate + output digest
+/// Replaces: screener-fetch-cron.sh + screener-digest-cron.sh
+/// Schedule: 09:00 & 15:00 WIB via Hermes cron (job_id: 2be1dce649c1)
+async fn run_idx_digest(args: &[String]) -> Result<()> {
+    use news_collector::idx_analyst::{
+        IdxAnalyst, IdxConfig, PORTFOLIO_STOCKS,
+        data_source::{mock_stock_data, YahooFinanceSource},
+        formatter::RTIFormatter,
+        models::Signal,
+        config::CRITERIA,
+    };
+    use chrono::Local;
+
+    let mut mock_mode = false;
+    let mut i = 3; // skip "news-collector", "idx-analyst", "digest"
+    while i < args.len() {
+        match args[i].as_str() {
+            "--mock" => { mock_mode = true; i += 1; }
+            _ => { i += 1; }
+        }
+    }
+
+    let now = Local::now();
+    let tickers: Vec<String> = PORTFOLIO_STOCKS.iter().map(|s| s.to_string()).collect();
+
+    println!("═══════════════════════════════════════════════════════════════════");
+    println!("🇮🇩 PORTFOLIO INTELLIGENCE DIGEST");
+    println!("   Date: {} | Tickers: {}", now.format("%Y-%m-%d %H:%M WIB"), tickers.len());
+    println!("═══════════════════════════════════════════════════════════════════");
+
+    // Phase 1: Fetch market data for all tickers
+    println!("\n📥 Phase 1: Fetching market data...");
+    println!("───────────────────────────────────────────────────────────────────");
+
+    let source = if !mock_mode { YahooFinanceSource::new().ok() } else { None };
+    let mut stock_data_list: Vec<(String, news_collector::idx_analyst::StockData)> = Vec::new();
+    let mut fetch_ok = 0usize;
+    let mut fetch_err = 0usize;
+
+    for ticker in &tickers {
+        let data = if mock_mode {
+            mock_stock_data(ticker)
+        } else if let Some(ref src) = source {
+            match src.fetch_fundamentals(ticker).await {
+                Ok(d) => { fetch_ok += 1; d }
+                Err(e) => {
+                    fetch_err += 1;
+                    tracing::warn!("⚠️ {} fetch failed: {}", ticker, e);
+                    mock_stock_data(ticker)
+                }
+            }
+        } else {
+            mock_stock_data(ticker)
+        };
+        stock_data_list.push((ticker.clone(), data));
+    }
+
+    println!("   ✅ Fetched: {} ok, {} fallback-to-mock", fetch_ok, fetch_err);
+
+    // Phase 2: Run debate engine for all tickers
+    println!("\n📊 Phase 2: Running 5-persona debate...");
+    println!("───────────────────────────────────────────────────────────────────");
+
+    let config = IdxConfig::default();
+    let analyst = IdxAnalyst::new(config)?;
+
+    let mut buy_signals: Vec<String> = Vec::new();
+    let mut hold_signals: Vec<String> = Vec::new();
+    let mut avoid_signals: Vec<String> = Vec::new();
+
+    println!();
+    for (ticker, data) in &stock_data_list {
+        match analyst.analyze_stock(ticker, data).await {
+            Ok(result) => {
+                // Categorize signal
+                match &result.debate.final_signal {
+                    Signal::StrongBuy | Signal::Buy => buy_signals.push(ticker.clone()),
+                    Signal::Hold => hold_signals.push(ticker.clone()),
+                    Signal::Pass | Signal::Avoid => avoid_signals.push(ticker.clone()),
+                }
+
+                // Print compact per-ticker result
+                println!("{}", RTIFormatter::format_telegram(
+                    &result.stock_data, &result.debate.final_signal
+                ));
+                println!();
+            }
+            Err(e) => {
+                error!("❌ {} analysis failed: {}", ticker, e);
+            }
+        }
+    }
+
+    // Phase 3: Digest summary
+    println!("═══════════════════════════════════════════════════════════════════");
+    println!("📋 DIGEST SUMMARY");
+    println!("═══════════════════════════════════════════════════════════════════");
+
+    if !buy_signals.is_empty() {
+        println!("  🟢 BUY/STRONG BUY: {}", buy_signals.join(", "));
+    }
+    if !hold_signals.is_empty() {
+        println!("  🟡 HOLD:           {}", hold_signals.join(", "));
+    }
+    if !avoid_signals.is_empty() {
+        println!("  🔴 PASS/AVOID:     {}", avoid_signals.join(", "));
+    }
+
+    // Criteria quick-check table
+    println!("\n📐 Valuation Criteria (PER<{} PBV<{} ROE>{}% DY>{}% DER<{}):",
+        CRITERIA.per_max, CRITERIA.pbv_max, CRITERIA.roe_min, CRITERIA.dy_min, CRITERIA.der_max);
+    println!("  {:6} {:>8} {:>8} {:>8} {:>8} {:>8}  Status",
+        "Ticker", "PER", "PBV", "ROE%", "DY%", "DER");
+    println!("  {}", "─".repeat(62));
+
+    for (ticker, data) in &stock_data_list {
+        let mut met = 0u8;
+        if data.per > 0.0 && data.per < CRITERIA.per_max { met += 1; }
+        if data.pbv > 0.0 && data.pbv < CRITERIA.pbv_max { met += 1; }
+        if data.roe > CRITERIA.roe_min { met += 1; }
+        if data.dy > CRITERIA.dy_min { met += 1; }
+        if data.der > 0.0 && data.der < CRITERIA.der_max { met += 1; }
+
+        let status = match met {
+            4..=5 => "✅ UNDERVALUED",
+            3 => "⚠️ FAIR",
+            _ => "❌ OVERVALUED",
+        };
+
+        println!("  {:6} {:>8.1} {:>8.2} {:>8.1} {:>8.1} {:>8.2}  {} ({}/5)",
+            ticker, data.per, data.pbv, data.roe, data.dy, data.der, status, met);
+    }
+
+    println!("\n═══════════════════════════════════════════════════════════════════");
+    println!("✅ Digest complete — {}", now.format("%H:%M WIB"));
+    println!("═══════════════════════════════════════════════════════════════════");
+
     Ok(())
 }
 

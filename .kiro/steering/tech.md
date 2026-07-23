@@ -92,9 +92,15 @@ cargo run --release -- clean         # Strip HTML, normalize
 cargo run --release -- label         # Prof Jiang game theory (via LLM)
 cargo run --release -- embed         # TEI embeddings → ArangoDB/Qdrant
 
+# IDX Analyst
+cargo run --release -- idx-analyst digest          # Portfolio intelligence (fetch + debate + digest)
+cargo run --release -- idx-analyst digest --mock   # Same with mock data (no network)
+cargo run --release -- idx-analyst --portfolio --full  # Full RTI format per-ticker
+cargo run --release -- idx-analyst BMRI --mock     # Single ticker analysis
+
 # Economic data collection
 cargo run --release -- economic all        # All economic collectors
-cargo run --release -- economic commodity  # Yahoo commodities (9 symbols)
+cargo run --release -- economic commodity  # Yahoo commodities (11 symbols)
 cargo run --release -- economic crypto     # CoinGecko (BTC, ETH, USDT, BNB, XRP)
 cargo run --release -- economic fred       # FRED macro data (requires FRED_API_KEY)
 cargo run --release -- economic bi         # Bank Indonesia rates

@@ -25,7 +25,7 @@ news-social-intelligence-data-pipeline/
 │
 ├── src/economic/                 # Economic Data Collectors
 │   ├── mod.rs                    # Module with models + collector registry
-│   ├── yahoo_commodities.rs      # 9 commodity symbols (Gold, Oil, Coal, CPO, etc.)
+│   ├── yahoo_commodities.rs      # 11 commodity symbols (Gold, Oil, CPO, Nickel, Coffee, etc.)
 │   ├── coingecko.rs              # Crypto: BTC, ETH, USDT, BNB, XRP
 │   ├── fred.rs                   # 6 FRED series (GDP, CPI, etc. — requires FRED_API_KEY)
 │   ├── bank_indonesia.rs         # BI Rate, JIBOR, USD/IDR, inflation
