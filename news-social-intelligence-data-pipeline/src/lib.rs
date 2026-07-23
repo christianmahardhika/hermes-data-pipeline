@@ -14,14 +14,18 @@ pub mod health;
 pub mod social;
 pub mod unlimited;
 pub mod idx_analyst;
+pub mod economic;
+pub mod arangodb;
 
 pub use collectors::RssCollector;
+pub use collectors::{FeedConfig, FeedCategory, CollectStats, CategoryStats, CircuitState};
 pub use cleaners::ArticleCleaner;
 pub use labelers::KiroLabeler;
 pub use embedders::TeiEmbedder;
 pub use storage::{Database, RawFeed, CleanedArticle, LabeledArticle};
 pub use health::KiroHealth;
 pub use unlimited::UnlimitedCollector;
+pub use economic::{EconomicIndicator, EconomicSource};
 
 /// Pipeline configuration
 #[derive(Debug, Clone)]

@@ -1,0 +1,135 @@
+name: Feed Health Check
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # Daily at 06:00 UTC
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  check-feeds:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check RSS Feed Health
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          RESULTS_FILE="feed-health-results.txt"
+          USER_AGENT="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
+          # Define feeds as name|url pairs for reliable iteration
+          FEED_LIST=(
+            "Tempo|https://rss.tempo.co/"
+            "CNN Indonesia|https://www.cnnindonesia.com/rss"
+            "Antara News|https://www.antaranews.com/rss/terkini.xml"
+            "Republika|https://www.republika.co.id/rss"
+            "Detik News|https://news.detik.com/rss"
+            "Detik Finance|https://finance.detik.com/rss"
+            "Kompas|https://rss.kompas.com/"
+            "Okezone|https://sindikasi.okezone.com/index.php/rss/0/RSS2.0"
+            "Sindonews|https://www.sindonews.com/rss"
+            "Kontan|https://www.kontan.co.id/rss"
+            "CNBC Indonesia|https://www.cnbcindonesia.com/rss"
+            "BBC Business|http://feeds.bbci.co.uk/news/business/rss.xml"
+            "BBC World|http://feeds.bbci.co.uk/news/world/rss.xml"
+            "CNBC|https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114"
+            "Bloomberg|https://feeds.bloomberg.com/markets/news.rss"
+            "Financial Times|https://www.ft.com/rss/home"
+            "MarketWatch|https://feeds.marketwatch.com/marketwatch/topstories/"
+            "Al Jazeera|https://www.aljazeera.com/xml/rss/all.xml"
+            "The Guardian|https://www.theguardian.com/world/rss"
+            "NPR|https://feeds.npr.org/1001/rss.xml"
+            "AP News|https://feedx.net/rss/ap.xml"
+            "Channel News Asia|https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml"
+            "Nikkei Asia|https://asia.nikkei.com/rss/feed/nar"
+            "South China Morning Post|https://www.scmp.com/rss/91/feed"
+            "Straits Times|https://www.straitstimes.com/news/asia/rss.xml"
+          )
+
+          TOTAL=0
+          SUCCESS=0
+
+          # Write header
+          {
+            echo "=============================================="
+            echo "  HERMES DATA PIPELINE - FEED HEALTH REPORT"
+            echo "=============================================="
+            echo ""
+            echo "Run Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            echo "Timeout:  30 seconds per feed"
+            echo "Total Feeds: ${#FEED_LIST[@]}"
+            echo ""
+            echo "----------------------------------------------"
+            printf "%-25s %-6s %s\n" "FEED NAME" "STATUS" "RESPONSE TIME"
+            echo "----------------------------------------------"
+          } > "$RESULTS_FILE"
+
+          # Check each feed
+          for ENTRY in "${FEED_LIST[@]}"; do
+            NAME="${ENTRY%%|*}"
+            URL="${ENTRY#*|}"
+            TOTAL=$((TOTAL + 1))
+
+            RESULT=$(curl -o /dev/null -s -w "%{http_code} %{time_total}" \
+              --max-time 30 \
+              -A "$USER_AGENT" \
+              -L \
+              "$URL" 2>/dev/null || echo "000 30.000")
+
+            HTTP_CODE=$(echo "$RESULT" | awk '{print $1}')
+            RESPONSE_TIME=$(echo "$RESULT" | awk '{print $2}')
+
+            # Count 2xx as success
+            if [[ "$HTTP_CODE" =~ ^2[0-9]{2}$ ]]; then
+              SUCCESS=$((SUCCESS + 1))
+              STATUS_ICON="✅"
+            else
+              STATUS_ICON="❌"
+            fi
+
+            printf "%-25s %s %-3s  %ss\n" "$NAME" "$STATUS_ICON" "$HTTP_CODE" "$RESPONSE_TIME" >> "$RESULTS_FILE"
+          done
+
+          # Calculate success rate
+          if [ "$TOTAL" -gt 0 ]; then
+            SUCCESS_RATE=$(( (SUCCESS * 100) / TOTAL ))
+          else
+            SUCCESS_RATE=0
+          fi
+
+          # Write summary
+          {
+            echo ""
+            echo "----------------------------------------------"
+            echo "  SUMMARY"
+            echo "----------------------------------------------"
+            echo "  Total Feeds:   $TOTAL"
+            echo "  Successful:    $SUCCESS"
+            echo "  Failed:        $((TOTAL - SUCCESS))"
+            echo "  Success Rate:  ${SUCCESS_RATE}%"
+            echo ""
+            if [ "$SUCCESS_RATE" -ge 80 ]; then
+              echo "  Status: ✅ HEALTHY (threshold: 80%)"
+            else
+              echo "  Status: ❌ UNHEALTHY (threshold: 80%)"
+            fi
+            echo "=============================================="
+          } >> "$RESULTS_FILE"
+
+          # Print results to log
+          cat "$RESULTS_FILE"
+
+          # Fail if below threshold
+          if [ "$SUCCESS_RATE" -lt 80 ]; then
+            echo ""
+            echo "::error::Feed health check FAILED: ${SUCCESS_RATE}% success rate (threshold: 80%)"
+            exit 1
+          fi
+
+      - name: Upload Health Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: feed-health-results
+          path: feed-health-results.txt
+          retention-days: 30

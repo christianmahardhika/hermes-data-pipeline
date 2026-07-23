@@ -11,14 +11,16 @@ pub mod risk;
 pub mod memory;
 pub mod formatter;
 pub mod data_source;
+pub mod signal_lookup;
 
 pub use config::{IdxConfig, PORTFOLIO_STOCKS, WATCHLIST_STOCKS, CRITERIA};
-pub use models::{StockData, Signal, Confidence};
+pub use models::{StockData, Signal, Confidence, ExternalSignal};
 pub use debate::{PersonaDebateEngine, DebateResult};
 pub use trader::{TraderExecutor, TraderProposal, TraderAction};
 pub use risk::{RiskManager, RiskAssessment};
 pub use memory::MemoryLogger;
 pub use formatter::RTIFormatter;
+pub use signal_lookup::{lookup_signals_for_ticker, temporal_decay};
 
 use anyhow::Result;
 use tracing::info;
@@ -41,7 +43,7 @@ impl IdxAnalyst {
 
         // Phase 1: Run debate
         let debate_engine = PersonaDebateEngine::new(ticker, self.config.debate_max_rounds);
-        let debate_result = debate_engine.run_debate(&stock_data.to_metrics());
+        let debate_result = debate_engine.run_debate(&stock_data.to_metrics(), &[]);
 
         // Phase 2: Generate trade proposal
         let trader = TraderExecutor::new(ticker, &self.config.execution);

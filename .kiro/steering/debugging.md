@@ -19,6 +19,9 @@
 | LLM malformed JSON | Markdown code blocks in response |
 | TEI timeout | Model not loaded yet |
 | Qdrant connection refused | Container not running |
+| RSS feed 403 | User-Agent blocked by CDN |
+| RSS feed 404 | Feed URL removed by publisher |
+| RSS feed 000/timeout | DNS/network or domain dead |
 | SQLite locked | Concurrent access issue |
 
 ## Debugging Commands
