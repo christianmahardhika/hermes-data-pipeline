@@ -1,13 +1,13 @@
 # News & Social Intelligence Data Pipeline
 
 Multi-source intelligence collection pipeline combining:
-1. **RSS News** (Rust) — 29 feeds, game theory labeling via Prof Jiang framework
+1. **RSS News** (Rust) — 25 feeds with fallback URLs, game theory labeling via Prof Jiang framework
 2. **Social Media** (Python) — HackerNews, Reddit, YouTube monitoring
 
 ## Architecture
 
 ```
-RSS Feeds (29 sources)
+RSS Feeds (25 sources)
        │
        ▼
 ┌─────────────┐
@@ -37,7 +37,7 @@ RSS Feeds (29 sources)
 
 ## Features
 
-- **Multi-source RSS collection**: 29 feeds (Indonesian national + international business/general + Asia Pacific)
+- **Multi-source RSS collection**: 25 feeds with fallback URL support (Indonesian national + international business/general + Asia Pacific)
 - **Batch LLM labeling**: 20 articles per API call for efficiency
 - **Game theory analysis**: Actors, events, relations, market sentiment, investment signals
 - **Semantic search**: 768-dim embeddings via TEI, stored in Qdrant
@@ -45,18 +45,19 @@ RSS Feeds (29 sources)
 
 ## News Sources
 
-### Indonesian National
-- Tempo, CNN Indonesia, Antara, Republika, Kompas, Tribunnews
-- Okezone, Sindonews, Kontan, CNBC Indonesia, Merdeka
+### Indonesian National (11)
+- Tempo, CNN Indonesia, Antara, Republika, Kompas
+- Detik News, Detik Finance (with cross-fallbacks)
+- Okezone, Sindonews, Kontan, CNBC Indonesia
 
-### International Business
-- BBC Business, CNBC, Bloomberg, Financial Times, MarketWatch
+### International Business (6)
+- BBC Business, BBC World, CNBC, Bloomberg, Financial Times, MarketWatch
 
-### International General
-- BBC World, Al Jazeera, The Guardian, NPR
+### International General (4)
+- Al Jazeera, The Guardian, NPR, AP News
 
-### Asia Pacific
-- Nikkei Asia, South China Morning Post, The Straits Times
+### Asia Pacific (4)
+- Channel News Asia, Nikkei Asia, South China Morning Post, The Straits Times
 
 ## Requirements
 

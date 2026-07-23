@@ -4,7 +4,7 @@
 //! Personas: Buffett, Graham, Lynch, Munger, Indonesia Value Guru
 
 use std::collections::HashMap;
-use crate::idx_analyst::models::{Signal, Confidence};
+use crate::idx_analyst::models::{Signal, Confidence, ExternalSignal};
 
 /// Single debate round
 #[derive(Debug, Clone)]
@@ -127,7 +127,7 @@ impl PersonaDebateEngine {
     }
 
     /// Run full debate: Round 1 (Buffett vs Graham), Round 2 (Lynch vs Munger)
-    pub fn run_debate(&self, metrics: &HashMap<String, f64>) -> DebateResult {
+    pub fn run_debate(&self, metrics: &HashMap<String, f64>, external_signals: &[ExternalSignal]) -> DebateResult {
         let pairs: &[(usize, usize)] = &[(0, 1), (2, 3)];
         let mut rounds = Vec::with_capacity(self.max_rounds);
 
@@ -148,7 +148,7 @@ impl PersonaDebateEngine {
             });
         }
 
-        let (signal, confidence, bull_win_rate) = self.consensus(&rounds);
+        let (signal, confidence, bull_win_rate) = self.consensus(&rounds, external_signals);
 
         let consensus_summary = match signal {
             Signal::StrongBuy => "Strong consensus — multiple perspectives align on BUY.",
@@ -160,12 +160,26 @@ impl PersonaDebateEngine {
         DebateResult { ticker: self.ticker.clone(), rounds, final_signal: signal, confidence, bull_win_rate, consensus_summary }
     }
 
-    fn consensus(&self, rounds: &[DebateRound]) -> (Signal, Confidence, f64) {
+    fn consensus(&self, rounds: &[DebateRound], external_signals: &[ExternalSignal]) -> (Signal, Confidence, f64) {
         let total = rounds.len() as f64;
         if total == 0.0 { return (Signal::Hold, Confidence::Medium, 0.5); }
 
         let bull_high = rounds.iter().filter(|r| r.bull_confidence == Confidence::High).count() as f64;
-        let rate = bull_high / total;
+        let mut rate = bull_high / total;
+
+        // IDX Guru signal integration: external signals modify the bull_win_rate
+        for signal in external_signals {
+            if signal.confidence > 0.5 {
+                match signal.direction.as_str() {
+                    "positive" => rate += signal.confidence * 0.15,
+                    "negative" => rate -= signal.confidence * 0.15,
+                    _ => {} // neutral — no change
+                }
+            }
+        }
+
+        // Clamp rate to [0.0, 1.0]
+        rate = rate.clamp(0.0, 1.0);
 
         if rate >= 0.75 { (Signal::StrongBuy, Confidence::High, rate) }
         else if rate >= 0.5 { (Signal::Buy, Confidence::Medium, rate) }
@@ -185,7 +199,7 @@ mod tests {
             ("der".into(), 0.5), ("dy".into(), 5.0),
         ]);
         let engine = PersonaDebateEngine::new("BMRI", 2);
-        let result = engine.run_debate(&metrics);
+        let result = engine.run_debate(&metrics, &[]);
 
         assert_eq!(result.rounds.len(), 2);
         assert_eq!(result.final_signal, Signal::Buy); // bull_win_rate = 0.5
@@ -198,9 +212,55 @@ mod tests {
             ("der".into(), 0.3), ("dy".into(), 7.0),
         ]);
         let engine = PersonaDebateEngine::new("PTBA", 1);
-        let result = engine.run_debate(&metrics);
+        let result = engine.run_debate(&metrics, &[]);
 
         assert_eq!(result.rounds.len(), 1);
         assert_eq!(result.final_signal, Signal::StrongBuy); // bull_win_rate = 1.0
+    }
+
+    #[test]
+    fn test_external_signal_modifies_debate() {
+        let metrics = HashMap::from([
+            ("per".into(), 12.0), ("pbv".into(), 1.5), ("roe".into(), 12.0),
+            ("der".into(), 0.8), ("dy".into(), 3.0),
+        ]);
+
+        let engine = PersonaDebateEngine::new("PTBA", 2);
+
+        // Without signals
+        let result_no_signal = engine.run_debate(&metrics, &[]);
+
+        // With strong positive signal: should shift toward Buy
+        let signals = vec![ExternalSignal {
+            source: "coal_price_spike".into(),
+            direction: "positive".into(),
+            confidence: 0.85,
+        }];
+        let result_with_signal = engine.run_debate(&metrics, &signals);
+
+        // The signal should boost bull_win_rate
+        assert!(result_with_signal.bull_win_rate >= result_no_signal.bull_win_rate);
+    }
+
+    #[test]
+    fn test_negative_external_signal_reduces_bull_rate() {
+        let metrics = HashMap::from([
+            ("per".into(), 8.0), ("pbv".into(), 1.2), ("roe".into(), 18.0),
+            ("der".into(), 0.5), ("dy".into(), 5.0),
+        ]);
+
+        let engine = PersonaDebateEngine::new("ADRO", 2);
+
+        let result_no_signal = engine.run_debate(&metrics, &[]);
+
+        let signals = vec![ExternalSignal {
+            source: "coal_price_crash".into(),
+            direction: "negative".into(),
+            confidence: 0.9,
+        }];
+        let result_with_signal = engine.run_debate(&metrics, &signals);
+
+        // Negative signal should reduce bull_win_rate
+        assert!(result_with_signal.bull_win_rate <= result_no_signal.bull_win_rate);
     }
 }

@@ -46,6 +46,7 @@ async fn main() -> Result<()> {
         "social" => run_social(&config, &args).await?,
         "unlimited" => run_unlimited(&config, &args).await?,
         "idx-analyst" => run_idx_analyst(&args).await?,
+        "economic" => run_economic(&args).await?,
         _ => {
             println!("News Collector - Rust ETL Pipeline");
             println!();
@@ -63,6 +64,7 @@ async fn main() -> Result<()> {
             println!("  social   Run social intelligence collector");
             println!("  unlimited Run unlimited news daemon (Rust + TEI 768-dim)");
             println!("  idx-analyst Run IDX stock analyst (5-persona debate)");
+            println!("  economic Run economic data collector (commodities, crypto, FRED, BI)");
             println!();
             println!("Social subcommands:");
             println!("  social --query \"AI\" --depth quick");
@@ -450,5 +452,60 @@ async fn run_idx_analyst(args: &[String]) -> Result<()> {
     }
 
     info!("✅ IDX Analyst complete!");
+    Ok(())
+}
+
+/// Run economic data collector (commodities, crypto, FRED, Bank Indonesia)
+async fn run_economic(args: &[String]) -> Result<()> {
+    let sub = args.get(2).map(|s| s.as_str()).unwrap_or("all");
+    let arango = news_collector::arangodb::ArangoClient::new()?;
+
+    match sub {
+        "commodity" => {
+            info!("📊 Fetching commodity prices...");
+            let collector = news_collector::economic::yahoo_commodities::YahooCommodityCollector::new()?;
+            let stats = collector.collect_all(&arango).await?;
+            info!("{}", stats);
+        }
+        "crypto" => {
+            info!("📊 Fetching crypto prices...");
+            let collector = news_collector::economic::coingecko::CoinGeckoCollector::new()?;
+            let stats = collector.collect_all(&arango).await?;
+            info!("{}", stats);
+        }
+        "fred" => {
+            info!("📊 Fetching FRED data...");
+            let collector = news_collector::economic::fred::FredCollector::new();
+            let stats = collector.collect_all(&arango).await?;
+            info!("{}", stats);
+        }
+        "bi" => {
+            info!("📊 Fetching Bank Indonesia data...");
+            let collector = news_collector::economic::bank_indonesia::BankIndonesiaCollector::new();
+            let stats = collector.collect_all(&arango).await?;
+            info!("{}", stats);
+        }
+        "all" | _ => {
+            info!("📊 Collecting all economic data...");
+
+            let collector = news_collector::economic::yahoo_commodities::YahooCommodityCollector::new()?;
+            let stats = collector.collect_all(&arango).await?;
+            info!("  Commodities: {}", stats);
+
+            let collector = news_collector::economic::coingecko::CoinGeckoCollector::new()?;
+            let stats = collector.collect_all(&arango).await?;
+            info!("  Crypto: {}", stats);
+
+            let collector = news_collector::economic::fred::FredCollector::new();
+            let stats = collector.collect_all(&arango).await?;
+            info!("  FRED: {}", stats);
+
+            let collector = news_collector::economic::bank_indonesia::BankIndonesiaCollector::new();
+            let stats = collector.collect_all(&arango).await?;
+            info!("  Bank Indonesia: {}", stats);
+        }
+    }
+
+    info!("✅ Economic data collection complete!");
     Ok(())
 }

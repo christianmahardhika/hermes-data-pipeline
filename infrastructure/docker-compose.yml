@@ -1,12 +1,23 @@
 version: "3.8"
 
 services:
-  # Vector Database
+  # Graph Database (Primary Intelligence Store)
+  arangodb:
+    image: arangodb:3.12
+    ports:
+      - "8529:8529"
+    volumes:
+      - arangodb_data:/var/lib/arangodb3
+    environment:
+      - ARANGO_ROOT_PASSWORD=${ARANGO_ROOT_PASSWORD:-hermes}
+    restart: unless-stopped
+
+  # Vector Database (Legacy Fallback)
   qdrant:
     image: qdrant/qdrant:latest
     ports:
-      - "6333:6333"  # REST
-      - "6334:6334"  # gRPC
+      - "6333:6333" # REST
+      - "6334:6334" # gRPC
     volumes:
       - qdrant_data:/qdrant/storage
     environment:
@@ -53,6 +64,7 @@ services:
       - full
 
 volumes:
+  arangodb_data:
   qdrant_data:
   tei_cache:
   redis_data:

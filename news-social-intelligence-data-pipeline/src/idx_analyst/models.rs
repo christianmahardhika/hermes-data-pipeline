@@ -103,6 +103,17 @@ impl StockData {
     }
 }
 
+/// External signal from economic/news/social data that modifies debate confidence
+#[derive(Debug, Clone)]
+pub struct ExternalSignal {
+    /// Source identifier (e.g., "coal_price_spike", "bi_rate_hike", "news_sentiment")
+    pub source: String,
+    /// Direction of impact: "positive", "negative", "neutral"
+    pub direction: String,
+    /// Confidence strength (0.0 - 1.0)
+    pub confidence: f64,
+}
+
 /// IDX profile (extra data from scraping)
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct IdxProfile {

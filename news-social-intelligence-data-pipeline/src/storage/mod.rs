@@ -162,12 +162,44 @@ impl Database {
                 updated_by TEXT
             );
 
+            -- Source freshness tracking
+            CREATE TABLE IF NOT EXISTS source_freshness (
+                source_name TEXT PRIMARY KEY,
+                last_article_at TEXT,
+                article_count_24h INTEGER DEFAULT 0,
+                avg_articles_per_day REAL DEFAULT 0.0,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
             -- Indexes
             CREATE INDEX IF NOT EXISTS idx_raw_status ON raw_feeds(status, fetched_at);
             CREATE INDEX IF NOT EXISTS idx_cleaned_hash ON cleaned(content_hash);
             CREATE INDEX IF NOT EXISTS idx_labeled_sentiment ON labeled(sentiment);
             CREATE INDEX IF NOT EXISTS idx_labeled_type ON labeled(news_type);
+            CREATE INDEX IF NOT EXISTS idx_freshness_stale ON source_freshness(last_article_at);
         "#)?;
+
+        // Schema migration: add circuit breaker columns (backward compat)
+        self.migrate_circuit_breaker_columns()?;
+
+        Ok(())
+    }
+
+    /// Add circuit breaker columns if they don't exist (backward compatible migration)
+    fn migrate_circuit_breaker_columns(&self) -> Result<()> {
+        // Check if columns exist by querying pragma
+        let has_circuit_col: bool = self.conn
+            .prepare("SELECT COUNT(*) FROM pragma_table_info('feed_health') WHERE name = 'circuit_open_until'")?
+            .query_row([], |row| row.get(0))
+            .unwrap_or(false);
+
+        if !has_circuit_col {
+            self.conn.execute_batch(
+                "ALTER TABLE feed_health ADD COLUMN circuit_open_until TEXT;
+                 ALTER TABLE feed_health ADD COLUMN backoff_secs INTEGER DEFAULT 3600;
+                 ALTER TABLE feed_health ADD COLUMN category TEXT;"
+            )?;
+        }
         Ok(())
     }
 
@@ -437,6 +469,78 @@ impl Database {
         rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
     }
 
+    // ========== Circuit Breaker ==========
+
+    /// Get circuit breaker state for a feed
+    pub fn get_circuit_state(&self, feed_name: &str) -> Result<Option<(i32, Option<String>, i64)>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT consecutive_failures, circuit_open_until, COALESCE(backoff_secs, 3600)
+             FROM feed_health WHERE feed_name = ?1"
+        )?;
+        let result = stmt.query_row(params![feed_name], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        });
+        match result {
+            Ok(val) => Ok(Some(val)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(e.into()),
+        }
+    }
+
+    /// Set circuit to OPEN state with backoff duration
+    pub fn set_circuit_open(&self, feed_name: &str, open_until: &str, backoff_secs: i64) -> Result<()> {
+        self.conn.execute(
+            "UPDATE feed_health SET circuit_open_until = ?2, backoff_secs = ?3
+             WHERE feed_name = ?1",
+            params![feed_name, open_until, backoff_secs],
+        )?;
+        Ok(())
+    }
+
+    /// Reset circuit to CLOSED state
+    pub fn reset_circuit(&self, feed_name: &str) -> Result<()> {
+        self.conn.execute(
+            "UPDATE feed_health SET circuit_open_until = NULL, backoff_secs = 3600, consecutive_failures = 0
+             WHERE feed_name = ?1",
+            params![feed_name],
+        )?;
+        Ok(())
+    }
+
+    // ========== Source Freshness ==========
+
+    /// Update freshness tracking for a source after successful collection
+    pub fn update_source_freshness(&self, source_name: &str, article_time: &str) -> Result<()> {
+        self.conn.execute(
+            "INSERT INTO source_freshness (source_name, last_article_at, article_count_24h, updated_at)
+             VALUES (?1, ?2, 1, CURRENT_TIMESTAMP)
+             ON CONFLICT(source_name) DO UPDATE SET
+                last_article_at = CASE
+                    WHEN ?2 > COALESCE(source_freshness.last_article_at, '') THEN ?2
+                    ELSE source_freshness.last_article_at
+                END,
+                article_count_24h = article_count_24h + 1,
+                updated_at = CURRENT_TIMESTAMP",
+            params![source_name, article_time],
+        )?;
+        Ok(())
+    }
+
+    /// Get sources that are stale (no new articles in 24h but historically active)
+    pub fn get_stale_sources(&self, stale_hours: i32) -> Result<Vec<(String, String)>> {
+        let threshold = format!("-{} hours", stale_hours);
+        let mut stmt = self.conn.prepare(
+            "SELECT source_name, last_article_at
+             FROM source_freshness
+             WHERE last_article_at < datetime('now', ?1)
+               AND avg_articles_per_day > 0.0"
+        )?;
+        let rows = stmt.query_map(params![threshold], |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
+    }
+
     // ========== Cleanup ==========
 
     /// Prune ingested records
@@ -493,5 +597,78 @@ impl Database {
         })?;
         
         rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_source_freshness_stale_detection() {
+        let db = Database::open(":memory:").unwrap();
+
+        // Insert a source with last_article_at = 3 days ago and avg > 0
+        let three_days_ago = (Utc::now() - chrono::Duration::days(3))
+            .format("%Y-%m-%d %H:%M:%S")
+            .to_string();
+        db.conn.execute(
+            "INSERT INTO source_freshness (source_name, last_article_at, article_count_24h, avg_articles_per_day)
+             VALUES (?1, ?2, 5, 3.0)",
+            params!["stale_source", &three_days_ago],
+        ).unwrap();
+
+        // Query get_stale_sources(48) and assert it appears
+        let stale = db.get_stale_sources(48).unwrap();
+        assert!(
+            stale.iter().any(|(name, _)| name == "stale_source"),
+            "Expected 'stale_source' to appear in stale sources (3 days old > 48h threshold)"
+        );
+
+        // Insert a source with last_article_at = 1 hour ago and avg > 0
+        let one_hour_ago = (Utc::now() - chrono::Duration::hours(1))
+            .format("%Y-%m-%d %H:%M:%S")
+            .to_string();
+        db.conn.execute(
+            "INSERT INTO source_freshness (source_name, last_article_at, article_count_24h, avg_articles_per_day)
+             VALUES (?1, ?2, 10, 5.0)",
+            params!["fresh_source", &one_hour_ago],
+        ).unwrap();
+
+        // Query get_stale_sources(48) and assert fresh_source does NOT appear
+        let stale = db.get_stale_sources(48).unwrap();
+        assert!(
+            !stale.iter().any(|(name, _)| name == "fresh_source"),
+            "Expected 'fresh_source' to NOT appear in stale sources (1h old < 48h threshold)"
+        );
+
+        // Verify stale_source still appears
+        assert!(
+            stale.iter().any(|(name, _)| name == "stale_source"),
+            "Expected 'stale_source' to still appear in stale sources"
+        );
+    }
+
+    #[test]
+    fn test_source_freshness_not_stale_if_no_history() {
+        let db = Database::open(":memory:").unwrap();
+
+        // Insert a source with last_article_at = 3 days ago but avg_articles_per_day = 0
+        // This means it was never historically active, so it should NOT be considered stale
+        let three_days_ago = (Utc::now() - chrono::Duration::days(3))
+            .format("%Y-%m-%d %H:%M:%S")
+            .to_string();
+        db.conn.execute(
+            "INSERT INTO source_freshness (source_name, last_article_at, article_count_24h, avg_articles_per_day)
+             VALUES (?1, ?2, 0, 0.0)",
+            params!["inactive_source", &three_days_ago],
+        ).unwrap();
+
+        let stale = db.get_stale_sources(48).unwrap();
+        assert!(
+            !stale.iter().any(|(name, _)| name == "inactive_source"),
+            "Expected 'inactive_source' to NOT appear (avg_articles_per_day = 0)"
+        );
     }
 }

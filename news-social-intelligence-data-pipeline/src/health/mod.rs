@@ -4,7 +4,7 @@
 
 use anyhow::Result;
 use reqwest::Client;
-use serde_json::json;
+use serde::{Deserialize, Serialize};
 use std::process::Command;
 use std::time::Duration;
 use tracing::{info, warn, error};
@@ -109,6 +109,24 @@ impl KiroHealth {
     }
 }
 
+/// Source freshness report entry
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StaleFeedReport {
+    pub source_name: String,
+    pub last_article_at: String,
+}
+
+/// Get stale sources from the database and format as a report.
+/// Returns sources that have not produced articles within `stale_hours`
+/// but are historically active (avg_articles_per_day > 0).
+pub fn get_stale_sources_report(db: &crate::storage::Database, stale_hours: i32) -> Result<Vec<StaleFeedReport>> {
+    let stale = db.get_stale_sources(stale_hours)?;
+    Ok(stale.into_iter().map(|(name, last_at)| StaleFeedReport {
+        source_name: name,
+        last_article_at: last_at,
+    }).collect())
+}
+
 /// Self-healing monitor
 pub struct SelfHealingMonitor {
     health: KiroHealth,
@@ -153,6 +171,17 @@ impl SelfHealingMonitor {
             let names: Vec<_> = unhealthy.iter().map(|f| f.feed_name.as_str()).collect();
             self.health.alert_telegram(&format!(
                 "⚠️ Unhealthy feeds (10+ consecutive failures): {}", 
+                names.join(", ")
+            )).await?;
+        }
+
+        // Check stale sources (no articles in 48h but historically active)
+        let stale = get_stale_sources_report(db, 48)?;
+        if !stale.is_empty() {
+            let names: Vec<_> = stale.iter().map(|s| s.source_name.as_str()).collect();
+            info!("⚠️ Stale sources (48h no articles): {}", names.join(", "));
+            self.health.alert_telegram(&format!(
+                "⚠️ Stale sources (48h no new articles): {}",
                 names.join(", ")
             )).await?;
         }
