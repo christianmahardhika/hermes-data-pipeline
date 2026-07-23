@@ -7,6 +7,10 @@ target
 .env
 *.env.local
 
+# MCP server logs (may contain API tokens)
+*.mcp.log
+dynatrace-managed-mcp.log
+
 # SQLite databases
 *.db
 *.db-journal

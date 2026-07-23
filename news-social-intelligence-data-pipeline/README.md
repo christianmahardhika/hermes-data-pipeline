@@ -101,6 +101,14 @@ cargo run --release -- embed     # Generate embeddings & store
 cargo run --release -- health
 ```
 
+### IDX Analyst (5-persona debate engine)
+```bash
+cargo run --release -- idx-analyst --portfolio --mock   # All tickers, mock data
+cargo run --release -- idx-analyst BMRI BBRI            # Specific tickers, live Yahoo
+cargo run --release -- idx-analyst digest               # Full portfolio digest (cron mode)
+cargo run --release -- idx-analyst digest --mock        # Digest with mock data
+```
+
 ## Prof Jiang Game Theory Framework
 
 Each article is analyzed for:

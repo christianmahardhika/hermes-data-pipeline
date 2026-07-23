@@ -100,7 +100,7 @@ Controlled by `STORAGE_BACKEND` env var: `"arangodb"` (default) or `"qdrant"` (l
 
 | Source | Data | Auth |
 |--------|------|------|
-| Yahoo Finance | 9 commodity symbols (Gold, Oil, Coal, CPO, Nickel, Tin, Copper, Rubber, Natural Gas) | No |
+| Yahoo Finance | 11 commodity symbols (Gold, Oil WTI, Brent, CPO, Silver, Copper, Natural Gas, Nickel, Aluminum, Coffee Arabica, Coffee Robusta) | No |
 | CoinGecko | BTC, ETH, USDT, BNB, XRP | No |
 | FRED (St. Louis Fed) | 6 series: GDP, CPI, Unemployment, Fed Funds Rate, 10Y Treasury, USD Index | FRED_API_KEY (optional) |
 | Bank Indonesia | BI Rate, JIBOR, USD/IDR, Inflation | No |
