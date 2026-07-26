@@ -1,0 +1,47 @@
+[
+  {
+    "commodity": "Nickel",
+    "price": 18450.0,
+    "change": 245.0,
+    "currency": "USD",
+    "unit": "per tonne",
+    "timestamp": "2026-07-24T03:01:24.972621+00:00",
+    "source": "Enhanced Intelligence System"
+  },
+  {
+    "commodity": "Gold",
+    "price": 2018.5,
+    "change": -15.25,
+    "currency": "USD",
+    "unit": "per oz",
+    "timestamp": "2026-07-24T03:01:24.972621+00:00",
+    "source": "Enhanced Intelligence System"
+  },
+  {
+    "commodity": "Crude Oil",
+    "price": 78.45,
+    "change": 1.23,
+    "currency": "USD",
+    "unit": "per barrel",
+    "timestamp": "2026-07-24T03:01:24.972621+00:00",
+    "source": "Enhanced Intelligence System"
+  },
+  {
+    "commodity": "Thermal Coal",
+    "price": 135.5,
+    "change": 3.75,
+    "currency": "USD",
+    "unit": "per metric ton",
+    "timestamp": "2026-07-24T03:01:24.972621+00:00",
+    "source": "Enhanced Intelligence System"
+  },
+  {
+    "commodity": "Palm Oil",
+    "price": 965.0,
+    "change": -12.5,
+    "currency": "USD",
+    "unit": "per tonne",
+    "timestamp": "2026-07-24T03:01:24.972621+00:00",
+    "source": "Enhanced Intelligence System"
+  }
+]
