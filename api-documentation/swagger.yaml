@@ -1,0 +1,771 @@
+openapi: 3.0.3
+info:
+  title: Intelligence System Rust Backend API
+  description: |
+    Comprehensive Intelligence System Backend for Indonesian Financial Markets
+    
+    Features:
+    - Real-time Indonesian stock portfolio management (BMRI, BBRI, INCO, ANTM)
+    - Strategic commodity data collection (Nickel, Gold, Coal, Palm Oil, Crude Oil)
+    - Prof Jiang Geopolitical Analysis with Game Theory models
+    - News correlation analysis with Indonesian/English bilingual support
+    - LSTM-based stock price predictions
+    - Real-time system performance monitoring
+    
+    **Technology Stack**: Rust + Tokio + Serde + TimescaleDB
+    **Target Audience**: Indonesian institutional investors and portfolio managers
+    **Data Sources**: Yahoo Finance, Indonesian financial news, geopolitical analysis
+  version: "1.0.0"
+  contact:
+    name: Christian Mahardhika
+    url: https://github.com/christianmahardhika/hermes-data-pipeline
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8888
+    description: Local Development Server
+  - url: https://api.intelligence.local:8888
+    description: Production Server (when deployed)
+
+paths:
+  /health:
+    get:
+      tags:
+        - System Health
+      summary: Health Check Endpoint
+      description: |
+        Returns system health status, version, and uptime information.
+        Used for monitoring and load balancer health checks.
+      operationId: getHealth
+      responses:
+        '200':
+          description: System is healthy and operational
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                service: "Intelligence System Rust Backend"
+                status: "healthy"
+                timestamp: "2026-07-30T23:44:58.839122212+00:00"
+                version: "1.0.0"
+        '503':
+          description: System is unhealthy or degraded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/dashboard:
+    get:
+      tags:
+        - Dashboard Data
+      summary: Get Complete Dashboard Data
+      description: |
+        Returns comprehensive dashboard data including:
+        - Indonesian stock portfolio performance (BMRI, BBRI, INCO, ANTM)
+        - Strategic commodity prices (Nickel, Gold, Coal, Palm Oil, Crude Oil)
+        - Prof Jiang geopolitical analysis with Game Theory models
+        - News correlations with sentiment analysis
+        - LSTM stock price predictions
+        - System performance metrics
+        - Real-time alerts and notifications
+        
+        **Performance**: Typical response time < 50ms with 85% cache hit ratio
+        **Update Frequency**: Real-time with 30-second polling intervals
+      operationId: getDashboardData
+      responses:
+        '200':
+          description: Complete dashboard data successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+              example:
+                portfolioData:
+                  portfolioValue: 12584367.58776372
+                  totalGain: 25324.41756023461
+                  gainPercentage: 0.20164288964558355
+                  holdings:
+                    - symbol: "BMRI"
+                      shares: 1000.0
+                      value: 4808014.630870463
+                      change: 8028.01301796045
+                    - symbol: "BBRI"
+                      shares: 800.0
+                      value: 3378791.812916017
+                      change: 18896.911794787906
+                    - symbol: "INCO"
+                      shares: 500.0
+                      value: 1929006.402707617
+                      change: 29449.2297592155
+                    - symbol: "ANTM"
+                      shares: 2000.0
+                      value: 2468554.741269623
+                      change: -31049.73701172924
+                stockData:
+                  - symbol: "BMRI"
+                    price: 4808.014630870463
+                    change_percent: 0.16697147646797042
+                    volume: 12907281
+                    timestamp: "2026-07-30T17:38:01.657241313+00:00"
+                  - symbol: "BBRI"
+                    price: 4223.489766145021
+                    change_percent: 0.5592801463100268
+                    volume: 12534623
+                    timestamp: "2026-07-30T17:38:02.192608206+00:00"
+                  - symbol: "INCO"
+                    price: 3858.012805415234
+                    change_percent: 1.5266527740851243
+                    volume: 43789721
+                    timestamp: "2026-07-30T17:38:02.722797794+00:00"
+                  - symbol: "ANTM"
+                    price: 1234.2773706348114
+                    change_percent: -1.2578103492150956
+                    volume: 5461805
+                    timestamp: "2026-07-30T17:38:03.252543173+00:00"
+                commodityData:
+                  - commodity: "Nickel"
+                    price: 18450.0
+                    change: 245.0
+                    currency: "USD"
+                    unit: "per tonne"
+                    timestamp: "2026-07-30T23:45:07.486092337Z"
+                  - commodity: "Gold"
+                    price: 2018.5
+                    change: -15.25
+                    currency: "USD"
+                    unit: "per oz"
+                    timestamp: "2026-07-30T23:45:07.456697116Z"
+                  - commodity: "Crude Oil"
+                    price: 78.45
+                    change: 1.23
+                    currency: "USD"
+                    unit: "per barrel"
+                    timestamp: "2026-07-30T23:45:07.512437338Z"
+                  - commodity: "Thermal Coal"
+                    price: 135.5
+                    change: 3.75
+                    currency: "USD"
+                    unit: "per metric ton"
+                    timestamp: "2026-07-30T23:45:07.538599658Z"
+                  - commodity: "Palm Oil"
+                    price: 965.0
+                    change: -12.5
+                    currency: "USD"
+                    unit: "per tonne"
+                    timestamp: "2026-07-30T23:45:07.578687657Z"
+                geopoliticalSignals:
+                  - region: "Indonesia"
+                    signal: "Indonesia-China bilateral trade agreement shows positive momentum"
+                    impact: "high"
+                    confidence: 0.82
+                    elite_overproduction_score: 0.65
+                    game_theory_analysis:
+                      cooperation_probability: 0.78
+                      defection_risk: 0.22
+                      nash_equilibrium: 0.85
+                    timestamp: "2026-07-30T23:45:07.360794965Z"
+                  - region: "Southeast Asia"
+                    signal: "ASEAN economic integration accelerating, benefiting Indonesian markets"
+                    impact: "medium"
+                    confidence: 0.75
+                    elite_overproduction_score: 0.42
+                    game_theory_analysis:
+                      cooperation_probability: 0.72
+                      defection_risk: 0.28
+                      nash_equilibrium: 0.68
+                    timestamp: "2026-07-30T23:45:07.360806043Z"
+                  - region: "Global"
+                    signal: "Global nickel market dynamics favor Indonesian mining sector"
+                    impact: "high"
+                    confidence: 0.68
+                    elite_overproduction_score: 0.89
+                    game_theory_analysis:
+                      cooperation_probability: 0.45
+                      defection_risk: 0.55
+                      nash_equilibrium: 0.52
+                    timestamp: "2026-07-30T23:45:07.360808635Z"
+                newsCorrelations:
+                  - title: "Bank Mandiri (BMRI) mencatat pertumbuhan laba bersih 15% di kuartal ketiga"
+                    source: "Kompas"
+                    sentiment: 0.0
+                    impact: 0.5
+                    language: "en"
+                    timestamp: "2026-07-30T23:45:07.584473573Z"
+                  - title: "PT Bank Rakyat Indonesia Tbk (BBRI) optimis capai target kredit 2024"
+                    source: "Bisnis Indonesia"
+                    sentiment: 0.0
+                    impact: 0.5
+                    language: "en"
+                    timestamp: "2026-07-30T23:45:07.584489726Z"
+                  - title: "Vale Indonesia (INCO) boosts nickel production to meet EV battery demand"
+                    source: "Reuters"
+                    sentiment: 0.0
+                    impact: 0.5
+                    language: "en"
+                    timestamp: "2026-07-30T23:45:07.584498395Z"
+                  - title: "Aneka Tambang (ANTM) ekspansi operasi emas di Sulawesi Utara"
+                    source: "CNN Indonesia"
+                    sentiment: 0.0
+                    impact: 0.5
+                    language: "en"
+                    timestamp: "2026-07-30T23:45:07.584506383Z"
+                correlationData:
+                  - pair: "BMRI-BBRI"
+                    correlation: 0.85
+                    strength: "Strong"
+                    timeframe: "30D"
+                  - pair: "INCO-ANTM"
+                    correlation: 0.72
+                    strength: "Strong"
+                    timeframe: "30D"
+                  - pair: "BMRI-INCO"
+                    correlation: 0.45
+                    strength: "Moderate"
+                    timeframe: "30D"
+                  - pair: "BBRI-ANTM"
+                    correlation: 0.38
+                    strength: "Weak"
+                    timeframe: "30D"
+                predictions:
+                  - symbol: "BMRI"
+                    prediction: 4950.0
+                    confidence: 0.72
+                    timeframe: "1W"
+                    model: "LSTM"
+                  - symbol: "BBRI"
+                    prediction: 4380.0
+                    confidence: 0.68
+                    timeframe: "1W"
+                    model: "LSTM"
+                  - symbol: "INCO"
+                    prediction: 3920.0
+                    confidence: 0.65
+                    timeframe: "1W"
+                    model: "LSTM"
+                  - symbol: "ANTM"
+                    prediction: 1285.0
+                    confidence: 0.71
+                    timeframe: "1W"
+                    model: "LSTM"
+                alerts:
+                  - category: "volume"
+                    message: "BMRI stock showing unusual volume spike (+150%)"
+                    severity: "high"
+                    timestamp: "2026-07-30T23:45:07.586608091Z"
+                  - category: "commodities"
+                    message: "Nickel prices approaching resistance level at $19,000"
+                    severity: "medium"
+                    timestamp: "2026-07-30T23:45:07.586613559Z"
+                  - category: "sentiment"
+                    message: "Positive sentiment surge in Indonesian banking news"
+                    severity: "low"
+                    timestamp: "2026-07-30T23:45:07.586616010Z"
+                performance:
+                  response_time_ms: 15.2
+                  cpu_usage_percent: 12.3
+                  memory_usage_mb: 128.5
+                  cache_hit_ratio: 0.85
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - service
+        - status
+        - timestamp
+        - version
+      properties:
+        service:
+          type: string
+          description: Service name identifier
+          example: "Intelligence System Rust Backend"
+        status:
+          type: string
+          enum: ["healthy", "degraded", "unhealthy"]
+          description: Current system health status
+          example: "healthy"
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of health check
+          example: "2026-07-30T23:44:58.839122212+00:00"
+        version:
+          type: string
+          description: API version
+          example: "1.0.0"
+
+    DashboardResponse:
+      type: object
+      required:
+        - portfolioData
+        - stockData
+        - commodityData
+        - geopoliticalSignals
+        - newsCorrelations
+        - correlationData
+        - predictions
+        - alerts
+        - performance
+      properties:
+        portfolioData:
+          $ref: '#/components/schemas/PortfolioData'
+        stockData:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockData'
+        commodityData:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommodityData'
+        geopoliticalSignals:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeopoliticalSignal'
+        newsCorrelations:
+          type: array
+          items:
+            $ref: '#/components/schemas/NewsCorrelation'
+        correlationData:
+          type: array
+          items:
+            $ref: '#/components/schemas/CorrelationData'
+        predictions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Prediction'
+        alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+        performance:
+          $ref: '#/components/schemas/Performance'
+
+    PortfolioData:
+      type: object
+      required:
+        - portfolioValue
+        - totalGain
+        - gainPercentage
+        - holdings
+      properties:
+        portfolioValue:
+          type: number
+          format: double
+          description: Total portfolio value in Indonesian Rupiah
+          example: 12584367.58776372
+        totalGain:
+          type: number
+          format: double
+          description: Total unrealized gain/loss
+          example: 25324.41756023461
+        gainPercentage:
+          type: number
+          format: double
+          description: Percentage gain/loss (0.20 = 20%)
+          example: 0.20164288964558355
+        holdings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Holding'
+
+    Holding:
+      type: object
+      required:
+        - symbol
+        - shares
+        - value
+        - change
+      properties:
+        symbol:
+          type: string
+          description: Stock symbol (Indonesian stock codes)
+          enum: ["BMRI", "BBRI", "INCO", "ANTM"]
+          example: "BMRI"
+        shares:
+          type: number
+          format: double
+          description: Number of shares owned
+          example: 1000.0
+        value:
+          type: number
+          format: double
+          description: Current market value of holdings
+          example: 4808014.630870463
+        change:
+          type: number
+          format: double
+          description: Unrealized gain/loss for this holding
+          example: 8028.01301796045
+
+    StockData:
+      type: object
+      required:
+        - symbol
+        - price
+        - change_percent
+        - volume
+        - timestamp
+      properties:
+        symbol:
+          type: string
+          description: Stock symbol
+          enum: ["BMRI", "BBRI", "INCO", "ANTM"]
+          example: "BMRI"
+        price:
+          type: number
+          format: double
+          description: Current stock price in Indonesian Rupiah
+          example: 4808.014630870463
+        change_percent:
+          type: number
+          format: double
+          description: Daily percentage change
+          example: 0.16697147646797042
+        volume:
+          type: integer
+          description: Trading volume
+          example: 12907281
+        timestamp:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2026-07-30T17:38:01.657241313+00:00"
+
+    CommodityData:
+      type: object
+      required:
+        - commodity
+        - price
+        - change
+        - currency
+        - unit
+        - timestamp
+      properties:
+        commodity:
+          type: string
+          description: Commodity name
+          enum: ["Nickel", "Gold", "Crude Oil", "Thermal Coal", "Palm Oil"]
+          example: "Nickel"
+        price:
+          type: number
+          format: double
+          description: Current commodity price
+          example: 18450.0
+        change:
+          type: number
+          format: double
+          description: Daily price change
+          example: 245.0
+        currency:
+          type: string
+          description: Price currency
+          enum: ["USD"]
+          example: "USD"
+        unit:
+          type: string
+          description: Price unit
+          enum: ["per tonne", "per oz", "per barrel", "per metric ton"]
+          example: "per tonne"
+        timestamp:
+          type: string
+          format: date-time
+          description: Data timestamp
+          example: "2026-07-30T23:45:07.486092337Z"
+
+    GeopoliticalSignal:
+      type: object
+      required:
+        - region
+        - signal
+        - impact
+        - confidence
+        - elite_overproduction_score
+        - game_theory_analysis
+        - timestamp
+      properties:
+        region:
+          type: string
+          description: Geographical region
+          enum: ["Indonesia", "Southeast Asia", "Global"]
+          example: "Indonesia"
+        signal:
+          type: string
+          description: Geopolitical signal description
+          example: "Indonesia-China bilateral trade agreement shows positive momentum"
+        impact:
+          type: string
+          description: Expected impact level
+          enum: ["low", "medium", "high"]
+          example: "high"
+        confidence:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: Confidence score (0-1)
+          example: 0.82
+        elite_overproduction_score:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: Prof Jiang elite overproduction score (0-1)
+          example: 0.65
+        game_theory_analysis:
+          $ref: '#/components/schemas/GameTheoryAnalysis'
+        timestamp:
+          type: string
+          format: date-time
+          description: Signal timestamp
+          example: "2026-07-30T23:45:07.360794965Z"
+
+    GameTheoryAnalysis:
+      type: object
+      required:
+        - cooperation_probability
+        - defection_risk
+        - nash_equilibrium
+      properties:
+        cooperation_probability:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: Probability of cooperative behavior (0-1)
+          example: 0.78
+        defection_risk:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: Risk of defection from agreements (0-1)
+          example: 0.22
+        nash_equilibrium:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: Nash equilibrium stability score (0-1)
+          example: 0.85
+
+    NewsCorrelation:
+      type: object
+      required:
+        - title
+        - source
+        - sentiment
+        - impact
+        - language
+        - timestamp
+      properties:
+        title:
+          type: string
+          description: News article title
+          example: "Bank Mandiri (BMRI) mencatat pertumbuhan laba bersih 15% di kuartal ketiga"
+        source:
+          type: string
+          description: News source
+          enum: ["Kompas", "Bisnis Indonesia", "Reuters", "CNN Indonesia", "Detik Finance", "Tempo"]
+          example: "Kompas"
+        sentiment:
+          type: number
+          format: double
+          minimum: -1
+          maximum: 1
+          description: Sentiment score (-1 to 1, negative to positive)
+          example: 0.0
+        impact:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: Market impact score (0-1)
+          example: 0.5
+        language:
+          type: string
+          description: Article language
+          enum: ["id", "en"]
+          example: "en"
+        timestamp:
+          type: string
+          format: date-time
+          description: News timestamp
+          example: "2026-07-30T23:45:07.584473573Z"
+
+    CorrelationData:
+      type: object
+      required:
+        - pair
+        - correlation
+        - strength
+        - timeframe
+      properties:
+        pair:
+          type: string
+          description: Stock pair for correlation analysis
+          example: "BMRI-BBRI"
+        correlation:
+          type: number
+          format: double
+          minimum: -1
+          maximum: 1
+          description: Correlation coefficient (-1 to 1)
+          example: 0.85
+        strength:
+          type: string
+          description: Correlation strength category
+          enum: ["Weak", "Moderate", "Strong"]
+          example: "Strong"
+        timeframe:
+          type: string
+          description: Analysis timeframe
+          enum: ["1D", "7D", "30D", "90D", "1Y"]
+          example: "30D"
+
+    Prediction:
+      type: object
+      required:
+        - symbol
+        - prediction
+        - confidence
+        - timeframe
+        - model
+      properties:
+        symbol:
+          type: string
+          description: Stock symbol
+          enum: ["BMRI", "BBRI", "INCO", "ANTM"]
+          example: "BMRI"
+        prediction:
+          type: number
+          format: double
+          description: Predicted price
+          example: 4950.0
+        confidence:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: Prediction confidence (0-1)
+          example: 0.72
+        timeframe:
+          type: string
+          description: Prediction timeframe
+          enum: ["1D", "1W", "1M", "3M"]
+          example: "1W"
+        model:
+          type: string
+          description: ML model used for prediction
+          enum: ["LSTM", "GRU", "Random Forest", "XGBoost"]
+          example: "LSTM"
+
+    Alert:
+      type: object
+      required:
+        - category
+        - message
+        - severity
+        - timestamp
+      properties:
+        category:
+          type: string
+          description: Alert category
+          enum: ["volume", "price", "commodities", "sentiment", "technical", "fundamental"]
+          example: "volume"
+        message:
+          type: string
+          description: Alert message
+          example: "BMRI stock showing unusual volume spike (+150%)"
+        severity:
+          type: string
+          description: Alert severity level
+          enum: ["low", "medium", "high", "critical"]
+          example: "high"
+        timestamp:
+          type: string
+          format: date-time
+          description: Alert timestamp
+          example: "2026-07-30T23:45:07.586608091Z"
+
+    Performance:
+      type: object
+      required:
+        - response_time_ms
+        - cpu_usage_percent
+        - memory_usage_mb
+        - cache_hit_ratio
+      properties:
+        response_time_ms:
+          type: number
+          format: double
+          description: API response time in milliseconds
+          example: 15.2
+        cpu_usage_percent:
+          type: number
+          format: double
+          description: CPU usage percentage
+          example: 12.3
+        memory_usage_mb:
+          type: number
+          format: double
+          description: Memory usage in megabytes
+          example: 128.5
+        cache_hit_ratio:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: Cache hit ratio (0-1)
+          example: 0.85
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+        - timestamp
+      properties:
+        error:
+          type: string
+          description: Error code or type
+          example: "INTERNAL_SERVER_ERROR"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "An internal server error occurred"
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+          example: "2026-07-30T23:45:07.586616010Z"
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+
+tags:
+  - name: System Health
+    description: System health monitoring and status checks
+  - name: Dashboard Data
+    description: Complete dashboard data for Indonesian financial markets
+
+externalDocs:
+  description: GitHub Repository
+  url: https://github.com/christianmahardhika/hermes-data-pipeline
