@@ -16,6 +16,33 @@ This file is maintained by the Retrospective Agent. It captures learnings from e
 
 <!-- New entries go here, above the line -->
 
+## 2026-07-31 — Dashboard Not Showing Production Data
+
+### Learning 57: Environment variable naming must be consistent across all components in a monorepo
+**Issue**: Dashboard showed mock/fallback data instead of production data. User reported "data yang live di production ga muncul di dashboard".
+**Root Cause**: Two naming conventions in the same monorepo:
+- News pipeline (`news-social-intelligence-data-pipeline`) uses: `ARANGO_URL`, `ARANGO_DATABASE` → writes to `hermes` DB
+- Dashboard backend (`src/services.rs`) uses: `ARANGODB_URL`, `ARANGODB_DATABASE` → defaults to `intelligence` DB
+Since env vars didn't match, dashboard fell back to `localhost:8529` with database `intelligence` (which doesn't have the data).
+**Learning**: (1) ALL components in a monorepo MUST use identical env var names — document them in ONE canonical place (`.env.example` or `tech.md`), (2) When adding new services that connect to shared infrastructure, ALWAYS check existing components for env var naming, (3) Fallback mechanisms (mock data) can mask configuration errors — add logging when fallback is triggered.
+**Action Taken**: Applied fix in `src/services.rs`: changed `ARANGODB_*` → `ARANGO_*` and default database `intelligence` → `hermes`. Dashboard now uses canonical env var names matching project standard.
+
+## 2026-07-30 — Dashboard Investigation (Empty Folder Discovery)
+
+### Learning 56: Empty placeholder folders without README cause confusion about project status
+**Issue**: User asked to test Next.js dashboard with swagger.yaml but saw no data. Investigation revealed `nextjs-intelligence-dashboard/` folder is completely empty — no code, no README, no indication of status.
+**Root Cause**: Folder was created as a placeholder for future development but never populated. No documentation explaining that it's a TODO or stub.
+**Learning**: When creating placeholder folders for planned features: (1) Always add a minimal README.md explaining the folder's purpose and status (e.g., "Planned: Next.js dashboard consuming `/api/dashboard` endpoint"), (2) Don't assume empty folders communicate intent — they cause "is this broken or not built?" confusion, (3) Related: swagger.yaml exists in `api-documentation/` but nothing consumes it yet — this gap should be documented.
+**Action Taken**: Identified 3 layers: swagger spec (exists), Rust backend (exists but not running), Next.js frontend (empty folder). Offered to scaffold or start services.
+
+## 2026-07-30 — Merge Conflict Analysis for Long-Running Feature Branch
+
+### Learning 55: Long-running feature branches need periodic rebase to avoid massive merge conflicts
+**Issue**: `feature/news-source-resilience` branch couldn't be PR'd to main due to 7 file conflicts. The branch diverged from commit `a4e0c7e` while main advanced 8 commits (PRs #6-#11).
+**Root Cause**: Feature branch was created, work completed, but main continued evolving with new features (idx-analyst digest, cron scripts, coffee commodities). No periodic rebase was done during the feature development.
+**Learning**: For feature branches longer than 3-5 days: (1) Rebase onto main weekly to catch conflicts early when they're smaller, (2) Before starting PR, always `git fetch origin && git merge-base main <branch>` to see divergence point, (3) Heavy conflicts (like `src/main.rs` with ~140 new lines) are painful to resolve — small frequent rebases are easier than one giant merge.
+**Action Taken**: Documented. Provided user with rebase vs merge options and conflict file analysis. Recommended rebase for cleaner history.
+
 ## 2026-07-23 — Merge screener-fetch + screener-digest into Rust pipeline `idx-analyst digest`
 
 ### Learning 53: Adding CLI subcommands to existing match arms requires checking enum/type definitions first

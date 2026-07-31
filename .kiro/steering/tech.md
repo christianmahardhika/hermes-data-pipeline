@@ -48,6 +48,9 @@
 | `STORAGE_BACKEND` | `arangodb` | Primary store: `"arangodb"` or `"qdrant"` (legacy) |
 
 ### ArangoDB
+
+> ⚠️ **CANONICAL NAMES**: ALL components MUST use these exact env var names. Do NOT use `ARANGODB_*` variants.
+
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ARANGO_URL` | `http://localhost:8529` | ArangoDB HTTP endpoint |

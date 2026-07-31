@@ -21,10 +21,11 @@ impl ArangoClient {
     pub fn new() -> Self {
         Self {
             client: Client::new(),
-            base_url: std::env::var("ARANGODB_URL").unwrap_or_else(|_| "http://localhost:8529".to_string()),
-            database: std::env::var("ARANGODB_DATABASE").unwrap_or_else(|_| "intelligence".to_string()),
-            username: std::env::var("ARANGODB_USERNAME").unwrap_or_else(|_| "root".to_string()),
-            password: std::env::var("ARANGODB_PASSWORD").unwrap_or_else(|_| "".to_string()),
+            // Use canonical env var names matching project standard (tech.md)
+            base_url: std::env::var("ARANGO_URL").unwrap_or_else(|_| "http://localhost:8529".to_string()),
+            database: std::env::var("ARANGO_DATABASE").unwrap_or_else(|_| "hermes".to_string()),
+            username: std::env::var("ARANGO_USERNAME").unwrap_or_else(|_| "root".to_string()),
+            password: std::env::var("ARANGO_PASSWORD").unwrap_or_else(|_| "".to_string()),
         }
     }
 
