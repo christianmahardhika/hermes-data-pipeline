@@ -1,0 +1,54 @@
+[package]
+name = "hermes-economic"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Shared Hermes common library
+hermes-common = { path = "../hermes-common" }
+
+# Async runtime and utilities
+tokio = { workspace = true }
+futures = { workspace = true }
+async-trait = "0.1"
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_json = "1.0"
+
+# Logging and tracing
+tracing = { workspace = true }
+
+# Time handling for market hours and economic data
+chrono = { workspace = true, features = ["serde"] }
+
+# UUID generation
+uuid = { workspace = true, features = ["serde", "v4"] }
+
+# HTTP client for economic APIs (trait-based for testing)
+# reqwest = { version = "0.11", features = ["json", "stream"] }
+
+# Mathematical calculations for correlations and indicators
+nalgebra = "0.32"
+statrs = "0.16"
+
+# Configuration management
+config = "0.13"
+
+# Command line interface for economic tools
+clap = { version = "4.0", features = ["derive"] }
+
+# Rate limiting for API calls
+governor = "0.6"
+
+# Decimal precision for financial data
+rust_decimal = { version = "1.0", features = ["serde-float"] }
+
+[dev-dependencies]
+tokio-test = "0.4"
+mockito = "1.2"
+approx = "0.5" # For floating point comparisons in tests
