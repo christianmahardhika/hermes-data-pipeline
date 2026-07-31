@@ -1,0 +1,69 @@
+[package]
+name = "hermes-analyst"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Shared Hermes libraries
+hermes-common = { path = "../hermes-common" }
+hermes-economic = { path = "../hermes-economic" }
+hermes-social = { path = "../hermes-social" }
+
+# Async runtime and utilities
+tokio = { workspace = true }
+futures = { workspace = true }
+async-trait = "0.1"
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_json = "1.0"
+
+# Logging and tracing
+tracing = { workspace = true }
+
+# Time handling for analysis and predictions
+chrono = { workspace = true, features = ["serde"] }
+
+# UUID generation
+uuid = { workspace = true, features = ["serde", "v4"] }
+
+# Mathematical analysis and machine learning
+nalgebra = "0.32"
+statrs = "0.16"
+ndarray = "0.15"
+
+# Natural language processing for content analysis
+regex = "1.10"
+unicode-normalization = "0.1"
+
+# Pattern matching and rule engine
+pest = "2.7"
+pest_derive = "2.7"
+
+# Configuration management
+config = "0.13"
+
+# Command line interface for analyst tools
+clap = { version = "4.0", features = ["derive"] }
+
+# Decimal precision for financial calculations
+rust_decimal = { version = "1.0", features = ["serde-float"] }
+
+# Graph analysis for correlation networks
+petgraph = "0.6"
+
+# Bayesian inference for probability analysis
+rv = "0.16"
+
+[dev-dependencies]
+tokio-test = "0.4"
+mockito = "1.2"
+approx = "0.5" # For floating point comparisons in tests
+proptest = "1.0" # Property-based testing for robust analysis
+
+[build-dependencies]
+pest_generator = "2.7"
