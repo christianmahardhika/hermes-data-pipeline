@@ -3,42 +3,117 @@
 //! Common data structures used throughout the pipeline including:
 //! - Article and news item models
 //! - Processing status enums
-//! - Correlation data structures
+//! - Actor tracking for intelligence analysis
+//! - Topic categorization and sentiment analysis
+//! - Signal detection and alert systems
+//! - Indonesian stock market specific types
 
 use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Utc};
-use uuid::Uuid;
 
-/// Status of an article in the processing pipeline
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum ArticleStatus {
-    Raw,
-    Cleaned,
-    Labeled,
-    Embedded,
-    Processed,
-    Error,
+// Re-export all domain modules
+pub mod article;
+pub mod actor;
+pub mod topic;
+pub mod signal;
+
+// Re-export core types for easy access
+pub use article::{Article, ArticleStatus};
+pub use actor::{Actor, ActorType};
+pub use topic::{Topic, TopicCategory, TopicSentiment};
+pub use signal::{Signal, ExternalSignal, SignalCategory, SignalStrength};
+
+/// Indonesian stock symbols for portfolio tracking
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum IndonesianStock {
+    /// Bank Mandiri (Persero) Tbk
+    BMRI,
+    /// Bank Rakyat Indonesia (Persero) Tbk
+    BBRI,
+    /// Vale Indonesia Tbk (formerly INCO)
+    INCO,
+    /// Aneka Tambang (Persero) Tbk
+    ANTM,
+    /// Bukit Asam (Persero) Tbk
+    PTBA,
+    /// Telkom Indonesia (Persero) Tbk
+    TLKM,
+    /// Astra International Tbk
+    ASII,
+    /// Kalbe Farma Tbk
+    KLBF,
+    /// Tempo Scan Pacific Tbk
+    TSPC,
+    /// Bumi Serpong Damai Tbk
+    BSDE,
 }
 
-/// Core article model shared across services
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Article {
-    pub id: Uuid,
-    pub title: String,
-    pub content: String,
-    pub url: String,
-    pub status: ArticleStatus,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+impl IndonesianStock {
+    /// Get stock symbol as string
+    pub fn symbol(&self) -> &'static str {
+        match self {
+            IndonesianStock::BMRI => "BMRI",
+            IndonesianStock::BBRI => "BBRI", 
+            IndonesianStock::INCO => "INCO",
+            IndonesianStock::ANTM => "ANTM",
+            IndonesianStock::PTBA => "PTBA",
+            IndonesianStock::TLKM => "TLKM",
+            IndonesianStock::ASII => "ASII",
+            IndonesianStock::KLBF => "KLBF",
+            IndonesianStock::TSPC => "TSPC",
+            IndonesianStock::BSDE => "BSDE",
+        }
+    }
+
+    /// Get sector classification
+    pub fn sector(&self) -> &'static str {
+        match self {
+            IndonesianStock::BMRI | IndonesianStock::BBRI => "Banking",
+            IndonesianStock::INCO | IndonesianStock::ANTM | IndonesianStock::PTBA => "Mining",
+            IndonesianStock::TLKM => "Telecommunications",
+            IndonesianStock::ASII => "Automotive",
+            IndonesianStock::KLBF | IndonesianStock::TSPC => "Healthcare",
+            IndonesianStock::BSDE => "Real Estate",
+        }
+    }
+
+    /// Check if stock is in user's portfolio focus (Christian's holdings)
+    pub fn is_portfolio_focus(&self) -> bool {
+        matches!(
+            self,
+            IndonesianStock::BMRI | 
+            IndonesianStock::BBRI | 
+            IndonesianStock::INCO | 
+            IndonesianStock::ANTM |
+            IndonesianStock::PTBA |
+            IndonesianStock::TLKM |
+            IndonesianStock::ASII |
+            IndonesianStock::KLBF |
+            IndonesianStock::TSPC
+        )
+    }
 }
 
-/// Indonesian stock symbol for portfolio tracking
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct IndonesianStock {
-    pub symbol: String, // e.g., "BMRI", "BBRI", "INCO", "ANTM"
-    pub name: String,
-    pub price: Option<f64>,
-    pub change_pct: Option<f64>,
-    pub updated_at: DateTime<Utc>,
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_indonesian_stock_symbols() {
+        assert_eq!(IndonesianStock::BMRI.symbol(), "BMRI");
+        assert_eq!(IndonesianStock::INCO.symbol(), "INCO");
+    }
+
+    #[test]
+    fn test_indonesian_stock_sectors() {
+        assert_eq!(IndonesianStock::BMRI.sector(), "Banking");
+        assert_eq!(IndonesianStock::INCO.sector(), "Mining");
+        assert_eq!(IndonesianStock::TLKM.sector(), "Telecommunications");
+    }
+
+    #[test]
+    fn test_portfolio_focus() {
+        assert!(IndonesianStock::BMRI.is_portfolio_focus());
+        assert!(IndonesianStock::INCO.is_portfolio_focus());
+        assert!(!IndonesianStock::BSDE.is_portfolio_focus()); // Not in Christian's portfolio
+    }
 }
