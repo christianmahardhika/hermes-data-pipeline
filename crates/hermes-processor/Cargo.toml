@@ -1,0 +1,42 @@
+[package]
+name = "hermes-processor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Shared Hermes common library
+hermes-common = { path = "../hermes-common" }
+
+# Async runtime and utilities
+tokio = { workspace = true }
+futures = { workspace = true }
+async-trait = "0.1"
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_json = "1.0"
+
+# Logging and tracing
+tracing = { workspace = true }
+
+# Time handling
+chrono = { workspace = true, features = ["serde"] }
+
+# UUID generation
+uuid = { workspace = true, features = ["serde", "v4"] }
+
+# Text processing and NLP
+regex = "1.10"
+html2text = "0.12"
+unicode-normalization = "0.1"
+unidecode = "0.3"
+
+# Machine learning and embeddings (trait-based for now)
+# Note: Actual ML dependencies will be added when implementing real embeddings
+
+[dev-dependencies]
+tokio-test = "0.4"

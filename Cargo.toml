@@ -2,12 +2,8 @@
 resolver = "2"
 members = [
     "crates/hermes-common",
-    "crates/hermes-collector"
-    # Note: More crates will be added incrementally during TDD implementation
-    # "crates/hermes-processor",
-    # "crates/hermes-social", 
-    # "crates/hermes-economic",
-    # "crates/hermes-analyst"
+    "crates/hermes-collector",
+    "crates/hermes-processor"
 ]
 
 [workspace.dependencies]

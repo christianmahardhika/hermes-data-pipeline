@@ -22,8 +22,18 @@ pub use actor::{Actor, ActorType};
 pub use topic::{Topic, TopicCategory, TopicSentiment};
 pub use signal::{Signal, ExternalSignal, SignalCategory, SignalStrength};
 
-/// Indonesian stock symbols for portfolio tracking
+/// Article processing status for pipeline
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ProcessingStatus {
+    Pending,
+    InProgress,
+    Processed,
+    Failed,
+    Skipped,
+}
+
+/// Indonesian stock symbols for portfolio tracking
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum IndonesianStock {
     /// Bank Mandiri (Persero) Tbk
     BMRI,
@@ -35,6 +45,8 @@ pub enum IndonesianStock {
     ANTM,
     /// Bukit Asam (Persero) Tbk
     PTBA,
+    /// Triputra Agro Persada Tbk
+    TAPG,
     /// Telkom Indonesia (Persero) Tbk
     TLKM,
     /// Astra International Tbk
@@ -52,10 +64,11 @@ impl IndonesianStock {
     pub fn symbol(&self) -> &'static str {
         match self {
             IndonesianStock::BMRI => "BMRI",
-            IndonesianStock::BBRI => "BBRI", 
+            IndonesianStock::BBRI => "BBRI",
             IndonesianStock::INCO => "INCO",
             IndonesianStock::ANTM => "ANTM",
             IndonesianStock::PTBA => "PTBA",
+            IndonesianStock::TAPG => "TAPG",
             IndonesianStock::TLKM => "TLKM",
             IndonesianStock::ASII => "ASII",
             IndonesianStock::KLBF => "KLBF",
@@ -69,6 +82,7 @@ impl IndonesianStock {
         match self {
             IndonesianStock::BMRI | IndonesianStock::BBRI => "Banking",
             IndonesianStock::INCO | IndonesianStock::ANTM | IndonesianStock::PTBA => "Mining",
+            IndonesianStock::TAPG => "Agriculture",
             IndonesianStock::TLKM => "Telecommunications",
             IndonesianStock::ASII => "Automotive",
             IndonesianStock::KLBF | IndonesianStock::TSPC => "Healthcare",
@@ -80,15 +94,16 @@ impl IndonesianStock {
     pub fn is_portfolio_focus(&self) -> bool {
         matches!(
             self,
-            IndonesianStock::BMRI | 
-            IndonesianStock::BBRI | 
-            IndonesianStock::INCO | 
-            IndonesianStock::ANTM |
-            IndonesianStock::PTBA |
-            IndonesianStock::TLKM |
-            IndonesianStock::ASII |
-            IndonesianStock::KLBF |
-            IndonesianStock::TSPC
+            IndonesianStock::BMRI
+                | IndonesianStock::BBRI
+                | IndonesianStock::INCO
+                | IndonesianStock::ANTM
+                | IndonesianStock::PTBA
+                | IndonesianStock::TAPG
+                | IndonesianStock::TLKM
+                | IndonesianStock::ASII
+                | IndonesianStock::KLBF
+                | IndonesianStock::TSPC
         )
     }
 }
