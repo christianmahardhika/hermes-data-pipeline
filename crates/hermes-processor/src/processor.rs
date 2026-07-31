@@ -9,7 +9,7 @@ use crate::{
 use anyhow::{Result, anyhow};
 use hermes_common::types::{Article, ProcessingStatus, IndonesianStock};
 use std::time::Instant;
-use tracing::{info, warn, error, debug};
+use tracing::{info, error, debug};
 
 /// Main Hermes processor for Indonesian market intelligence
 pub struct HermesProcessor<T: EmbeddingGenerator> {
