@@ -1,17 +1,37 @@
 {
   "version": "1.0.0",
-  "current_feature": null,
-  "phase": "idle",
+  "current_feature": ".kiro/specs/pipeline-re-architecture",
+  "phase": "development",
   "agents": {
-    "developer": { "status": "idle", "current_task": null, "last_updated": null },
-    "data-engineer": { "status": "idle", "current_task": null, "last_updated": null },
-    "qa": { "status": "idle", "current_task": null, "last_updated": null },
-    "devsecops": { "status": "idle", "current_task": null, "last_updated": null },
-    "orchestrator": { "status": "idle", "current_task": null, "last_updated": null }
+    "developer": {
+      "status": "assigned",
+      "current_task": "dev-pipeline-re-architecture",
+      "last_updated": "2026-07-31T13:44:42Z"
+    },
+    "data-engineer": {
+      "status": "idle",
+      "current_task": null,
+      "last_updated": null
+    },
+    "qa": {
+      "status": "idle",
+      "current_task": null,
+      "last_updated": null
+    },
+    "devsecops": {
+      "status": "idle",
+      "current_task": null,
+      "last_updated": null
+    },
+    "orchestrator": {
+      "status": "idle",
+      "current_task": null,
+      "last_updated": null
+    }
   },
   "workflow": {
-    "spec_path": null,
-    "branch": null,
+    "spec_path": ".kiro/specs/pipeline-re-architecture",
+    "branch": "feature/pipeline-re-architecture",
     "tasks_completed": [],
     "tasks_pending": [],
     "blockers": [],
@@ -19,7 +39,7 @@
       "unit_tests": null,
       "lint": null,
       "security_scan": null,
-      "integration_tests": null
+      "e2e_tests": null
     }
   },
   "history": []

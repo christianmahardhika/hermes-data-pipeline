@@ -1,0 +1,16 @@
+{
+  "id": "dev-pipeline-re-architecture",
+  "type": "implement",
+  "spec_path": ".kiro/specs/pipeline-re-architecture",
+  "instruction": "Read spec at .kiro/specs/pipeline-re-architecture. Implement all tasks from tasks.md using TDD.",
+  "context": {
+    "branch": "feature/pipeline-re-architecture",
+    "constraints": [
+      "TDD required",
+      "Follow .kiro/steering/ standards"
+    ]
+  },
+  "timestamp": "2026-07-31T13:44:42Z",
+  "from": "orchestrator",
+  "to": "developer"
+}

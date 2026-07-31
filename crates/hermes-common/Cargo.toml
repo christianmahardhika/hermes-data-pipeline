@@ -1,0 +1,42 @@
+[package]
+name = "hermes-common"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+
+# Async runtime
+tokio = { workspace = true }
+
+# Async utilities
+async-trait = { workspace = true }
+
+# Logging and observability
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# JSON processing
+serde_json = "1.0"
+
+# TODO: Add HTTP client when OpenSSL dependencies resolved
+# reqwest = { workspace = true }
+
+# Time handling
+chrono = { workspace = true }
+
+# Configuration management
+config = { workspace = true }
+
+# UUID generation
+uuid = { workspace = true }
+
+# TODO: Add when needed for actual HTTP calls in collector services
+# reqwest = { workspace = true }
+# TODO: Add arangors when we need real database connection
+# arangors = { workspace = true }

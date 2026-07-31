@@ -1,0 +1,16 @@
+{
+  "id": "dev-news-source-resilience",
+  "type": "implement",
+  "spec_path": ".kiro/specs/news-source-resilience/",
+  "instruction": "Read spec at .kiro/specs/news-source-resilience/. Implement all tasks from tasks.md using TDD.",
+  "context": {
+    "branch": "feature/news-source-resilience",
+    "constraints": [
+      "TDD required",
+      "Follow .kiro/steering/ standards"
+    ]
+  },
+  "timestamp": "2026-07-31T08:19:17Z",
+  "from": "orchestrator",
+  "to": "developer"
+}
