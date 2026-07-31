@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Swarm Inbox Reader",
+  "description": "Saat agent start, cek inbox untuk pending tasks dari orchestrator.",
+  "version": "1",
+  "when": {
+    "type": "agentStart"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Sebagai bagian dari Swarm Agent System, cek inbox untuk pending tasks:\n\n1. **Check Your Inbox**:\n   ```bash\n   ls -la /home/ctianm/Order-Management-System-JualanKu-/.kiro/swarm/inbox/<your-role>/\n   ```\n   \n   Ganti `<your-role>` dengan: developer, qa, atau devsecops\n\n2. **Read Pending Task** (jika ada):\n   ```bash\n   cat /home/ctianm/Order-Management-System-JualanKu-/.kiro/swarm/inbox/<your-role>/*.json\n   ```\n\n3. **Execute Task**: Jika ada task:\n   - Baca `instruction` dari task JSON\n   - Baca `spec_path` untuk context\n   - Execute sesuai role-mu\n   - Setelah selesai, archive task file ke `processed/` subfolder\n\n4. **No Task?** Jika inbox kosong:\n   - Cek `python .kiro/swarm/swarm.py status` untuk swarm state\n   - Jika ada feature in progress tapi kamu idle, mungkin menunggu agent lain selesai\n\nINI ADALAH SWARM MODE — kamu bekerja sebagai bagian dari tim agents, bukan solo."
+  }
+}

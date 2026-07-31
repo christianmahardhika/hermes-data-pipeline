@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "current_feature": null,
+  "phase": "idle",
+  "agents": {
+    "developer": { "status": "idle", "current_task": null, "last_updated": null },
+    "data-engineer": { "status": "idle", "current_task": null, "last_updated": null },
+    "qa": { "status": "idle", "current_task": null, "last_updated": null },
+    "devsecops": { "status": "idle", "current_task": null, "last_updated": null },
+    "orchestrator": { "status": "idle", "current_task": null, "last_updated": null }
+  },
+  "workflow": {
+    "spec_path": null,
+    "branch": null,
+    "tasks_completed": [],
+    "tasks_pending": [],
+    "blockers": [],
+    "quality_gates": {
+      "unit_tests": null,
+      "lint": null,
+      "security_scan": null,
+      "integration_tests": null
+    }
+  },
+  "history": []
+}

@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Swarm Event Writer",
+  "description": "Setelah task selesai, otomatis write event ke .kiro/swarm/events/ untuk orchestrator pickup. Ini enables inter-agent communication via file-based message bus.",
+  "version": "1",
+  "when": {
+    "type": "postTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Task telah selesai. Sebagai bagian dari Swarm Agent System, kamu HARUS menulis event ke message bus:\n\n1. **Determine Result**: Apakah task berhasil atau gagal?\n   - success: semua test pass, implementation complete\n   - failed: ada blocker, test failures, atau errors\n\n2. **Determine Next Agent**:\n   - Jika kamu Developer → next: \"qa\"\n   - Jika kamu QA → next: \"devsecops\"\n   - Jika kamu DevSecOps → next: \"orchestrator\" (untuk final review)\n   - Jika failed → next: \"developer\" (untuk fix)\n\n3. **Write Event**:\n   ```bash\n   cd /home/ctianm/Order-Management-System-JualanKu-\n   python .kiro/swarm/swarm.py write-event \"<your-role>\" \"task_complete\" '{\"result\": \"<success|failed>\", \"next_suggested\": \"<next-agent>\", \"summary\": \"<brief summary>\", \"artifacts\": []}'\n   ```\n\n4. **Update Quality Gate** (jika applicable):\n   - Jika kamu QA dan run tests: include `\"quality_gate\": \"unit_tests\"`\n   - Jika kamu DevSecOps dan run security: include `\"quality_gate\": \"security_scan\"`\n\nContoh untuk Developer selesai implement:\n```bash\npython .kiro/swarm/swarm.py write-event \"developer\" \"task_complete\" '{\"result\": \"success\", \"next_suggested\": \"qa\", \"summary\": \"Implemented feature X with 5 unit tests\"}'\n```\n\nJANGAN skip step ini — event adalah cara agent lain tahu kamu sudah selesai."
+  }
+}
