@@ -1,6 +1,36 @@
 # Project Structure
 
-Monorepo with multiple data pipelines sharing common infrastructure.
+Monorepo with multiple data pipelines and services sharing common infrastructure.
+
+## Crate Overview
+
+| Crate | Path | Purpose | Build Command |
+|-------|------|---------|---------------|
+| **news-collector** | `news-social-intelligence-data-pipeline/` | Main data pipeline (RSS, social, economic) | `cargo build --release` (from subdirectory) |
+| **intelligence-system-rust** | `/` (root) | Web dashboard backend (Axum API) | `cargo build --release` (from root) |
+
+> ⚠️ **Note**: The root `src/` directory contains the dashboard backend, NOT the main pipeline. Check `Cargo.toml` at each level to determine which crate you're working with.
+
+## Web Dashboard Backend (Root Level)
+
+```
+/                                 # Repository root
+├── Cargo.toml                    # intelligence-system-rust crate
+├── src/
+│   ├── main.rs                   # Axum web server entry point
+│   ├── handlers.rs               # HTTP route handlers
+│   ├── services.rs               # Business logic services (ArangoDB queries)
+│   ├── models.rs                 # API data models
+│   ├── social_sentiment.rs       # Social sentiment analysis engine
+│   ├── prediction_engine.rs      # Price prediction (ML-based)
+│   └── websocket.rs              # WebSocket for real-time updates
+```
+
+**Dependencies**: Axum, tokio, reqwest, linfa (ML), ndarray-stats, ta (technical analysis)
+
+**Environment Variables**: Uses canonical names (`ARANGO_URL`, `ARANGO_DATABASE`, etc.) — see `tech.md`
+
+**Status**: Builds with warnings (57), many unused functions. Development in progress.
 
 ## Active Pipeline: News & Social Intelligence
 

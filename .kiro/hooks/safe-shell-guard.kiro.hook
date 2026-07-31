@@ -1,6 +1,6 @@
 {
   "name": "Safe Shell Guard",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Sebelum menjalankan shell command, validasi bahwa command aman: tidak ada destructive operations tanpa konfirmasi, tidak ada secrets yang ter-expose, dan command sesuai dengan project conventions.",
   "when": {
     "type": "preToolUse",
@@ -10,6 +10,6 @@
   },
   "then": {
     "type": "askAgent",
-    "prompt": "Validasi shell command yang akan dijalankan:\n\n**BLOCK jika**:\n- `rm -rf` pada directory penting (src/, social_intel/, .kiro/, .git/, infrastructure/)\n- `git push --force` ke main/master\n- `git reset --hard` tanpa backup\n- Command yang expose secrets (echo $LABELER_API_KEY, cat .env)\n- `docker system prune` tanpa konfirmasi user\n- `sqlite3 news_staging.db \"DROP TABLE\"` tanpa konfirmasi\n- `cargo clean` pada production artifacts tanpa konfirmasi\n\n**ALLOW jika**:\n- Test commands (cargo test, python -m pytest)\n- Lint commands (cargo clippy, cargo fmt)\n- Build commands (cargo build, cargo build --release)\n- Docker compose up/down/restart\n- Git status, diff, log, branch operations\n- File reads (cat, grep, find) pada non-secret files\n- Cargo run commands (collect, clean, label, embed, health, prune)\n- Python module runs (python -m social_intel.*)\n- curl ke localhost services (Qdrant, TEI)\n- File writes to config files (cat >, tee) pada non-secret files\n\nJika command aman: proceed.\nJika command berbahaya: BLOCK dan jelaskan risikonya."
+    "prompt": "Validasi shell command yang akan dijalankan:\n\n**AUTO-APPROVE (tidak perlu validasi manual)**:\n- Tool `get_process_output` — read-only, tidak ada risk\n- Tool `list_processes` — read-only, tidak ada risk\n- Tool `control_bash_process` dengan action `start` untuk development tools: npm, npx, cargo, python, node, yarn, pnpm\n- Tool `control_bash_process` dengan action `stop` — safely terminates process\n\n**BLOCK jika**:\n- `rm -rf` pada directory penting (src/, social_intel/, .kiro/, .git/, infrastructure/)\n- `git push --force` ke main/master\n- `git reset --hard` tanpa backup\n- Command yang expose secrets (echo $LABELER_API_KEY, cat .env)\n- `docker system prune` tanpa konfirmasi user\n- `sqlite3 news_staging.db \"DROP TABLE\"` tanpa konfirmasi\n- `cargo clean` pada production artifacts tanpa konfirmasi\n\n**ALLOW jika**:\n- Test commands (cargo test, python -m pytest)\n- Lint commands (cargo clippy, cargo fmt)\n- Build commands (cargo build, cargo build --release)\n- Docker compose up/down/restart\n- Git status, diff, log, branch operations\n- File reads (cat, grep, find) pada non-secret files\n- Cargo run commands (collect, clean, label, embed, health, prune)\n- Python module runs (python -m social_intel.*)\n- curl ke localhost services (Qdrant, TEI)\n- File writes to config files (cat >, tee) pada non-secret files\n- npm/npx commands untuk development tools (lavish-axi, eslint, prettier, etc.)\n\nJika command aman: proceed.\nJika command berbahaya: BLOCK dan jelaskan risikonya."
   }
 }

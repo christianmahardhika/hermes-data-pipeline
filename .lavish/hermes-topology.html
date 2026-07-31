@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hermes Data Pipeline — System Topology</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@5/dist/full.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({startOnLoad: true, theme: 'neutral'});</script>
+  <style>
+    .mermaid { background: transparent; }
+    .source-badge { @apply badge badge-sm; }
+  </style>
+</head>
+<body class="bg-base-200 min-h-screen">
+  
+  <!-- Header -->
+  <div class="navbar bg-base-100 shadow-lg">
+    <div class="flex-1">
+      <span class="text-xl font-bold px-4">🏛️ Hermes Data Pipeline</span>
+      <span class="badge badge-primary">System Topology</span>
+    </div>
+    <div class="flex-none px-4">
+      <span class="text-sm text-base-content/60">Last updated: July 2026</span>
+    </div>
+  </div>
+
+  <div class="container mx-auto px-4 py-8 max-w-7xl">
+    
+    <!-- Overview Stats -->
+    <div class="stats shadow w-full mb-8">
+      <div class="stat">
+        <div class="stat-figure text-primary">📰</div>
+        <div class="stat-title">RSS Feeds</div>
+        <div class="stat-value text-primary">31</div>
+        <div class="stat-desc">Every 15 minutes</div>
+      </div>
+      <div class="stat">
+        <div class="stat-figure text-secondary">💬</div>
+        <div class="stat-title">Social Sources</div>
+        <div class="stat-value text-secondary">3</div>
+        <div class="stat-desc">HN + Reddit + YouTube</div>
+      </div>
+      <div class="stat">
+        <div class="stat-figure text-accent">📊</div>
+        <div class="stat-title">Economic Indicators</div>
+        <div class="stat-value text-accent">27+</div>
+        <div class="stat-desc">Commodities + Crypto + Macro</div>
+      </div>
+      <div class="stat">
+        <div class="stat-figure text-info">🧠</div>
+        <div class="stat-title">LLM Analysis</div>
+        <div class="stat-value text-info">Prof Jiang</div>
+        <div class="stat-desc">Game Theory Framework</div>
+      </div>
+    </div>
+
+    <!-- Main Architecture Diagram -->
+    <div class="card bg-base-100 shadow-xl mb-8">
+      <div class="card-body">
+        <h2 class="card-title text-2xl mb-4">🗺️ High-Level Architecture</h2>
+        <div class="mermaid">
+flowchart TB
+    subgraph SOURCES["📥 Data Sources"]
+        RSS["📰 RSS Feeds<br/>(31 sources)"]
+        SOCIAL["💬 Social Media<br/>(HN, Reddit, YT)"]
+        ECON["📊 Economic Data<br/>(Yahoo, CoinGecko, FRED, BI)"]
+    end
+
+    subgraph COLLECTORS["📥 Collectors (standalone cron)"]
+        COLLECT_NEWS["news-collector<br/>RSS fetch + retry + fallback"]
+        COLLECT_SOCIAL["social-collector<br/>HN + Reddit + YouTube"]
+        COLLECT_ECON["econ-collector<br/>Yahoo + CoinGecko + FRED + BI"]
+    end
+
+    subgraph PROCESSOR["⚙️ Processing Pipeline (daemon)"]
+        CLEAN["cleaners/mod.rs<br/>HTML Strip + Normalize + Dedup"]
+        LABEL["labelers/mod.rs<br/>Prof Jiang via LLM"]
+        EMBED["embedders/mod.rs<br/>TEI Vectors (768-dim)"]
+    end
+
+    subgraph STAGING["📦 Staging"]
+        SQLITE["SQLite<br/>news_staging.db"]
+    end
+
+    subgraph INFRA["🏗️ Infrastructure"]
+        TEI["🔤 TEI Server<br/>multilingual-e5-base<br/>:8082"]
+        LLM["🤖 Kiromania LLM<br/>OpenAI-compatible<br/>:9000"]
+    end
+
+    subgraph STORAGE["💾 Intelligence Store"]
+        ARANGO["🥑 ArangoDB<br/>hermes database<br/>:8529"]
+        QDRANT["📐 Qdrant<br/>(legacy fallback)<br/>:6333"]
+    end
+
+    subgraph CONSUMERS["🎯 Consumers"]
+        ANALYST["📈 IDX Analyst<br/>5-persona debate"]
+        FULLSTACK["🖥️ Dashboard Monolith<br/>BFF + Next.js<br/>:3000 (single image)"]
+        AGENTS["🤖 Hermes Agents<br/>RAG + Graph queries"]
+    end
+
+    RSS --> COLLECT_NEWS
+    SOCIAL --> COLLECT_SOCIAL
+    ECON --> COLLECT_ECON
+
+    COLLECT_NEWS --> SQLITE
+    COLLECT_SOCIAL --> SQLITE
+    COLLECT_ECON --> SQLITE
+
+    SQLITE --> CLEAN
+    CLEAN --> SQLITE
+    SQLITE --> LABEL
+    LABEL --> SQLITE
+    SQLITE --> EMBED
+
+    LABEL -.->|"API"| LLM
+    EMBED -.->|"API"| TEI
+
+    EMBED --> ARANGO
+    EMBED -.->|"fallback"| QDRANT
+
+    ARANGO --> ANALYST
+    ARANGO --> FULLSTACK
+    ARANGO --> AGENTS
+        </div>
+
+        <!-- Proposed Changes Alert -->
+        <div class="alert alert-warning mt-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+          <div>
+            <h3 class="font-bold">🔄 Proposed Refactor (3 changes)</h3>
+            <ol class="list-decimal list-inside text-sm mt-1 space-y-1">
+              <li><strong>Dashboard → Monolith:</strong> Gabung Rust API (:8888) + Next.js (:3000) jadi 1 Docker image lightweight. BFF pattern — Next.js API routes langsung query ArangoDB, no separate backend.</li>
+              <li><strong>Collectors → Standalone:</strong> Pisah collectors dari daemon. Jadi cron job terpisah (atau binary terpisah) supaya bisa scale/schedule independently.</li>
+              <li><strong>Social Intel → Rust:</strong> Port social_intel_cron.py ke Rust (sudah ada di src/social/). Python legacy, Rust port sudah functional.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      
+      <!-- Data Sources Detail -->
+      <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+          <h2 class="card-title">📥 Data Sources</h2>
+          
+          <div class="collapse collapse-arrow bg-base-200 mb-2">
+            <input type="checkbox" checked />
+            <div class="collapse-title font-medium">
+              📰 RSS News (31 feeds)
+            </div>
+            <div class="collapse-content">
+              <div class="mb-3">
+                <h4 class="font-semibold text-sm mb-1">Indonesian National (11)</h4>
+                <div class="flex flex-wrap gap-1">
+                  <span class="badge badge-outline badge-sm">Tempo</span>
+                  <span class="badge badge-outline badge-sm">CNN ID</span>
+                  <span class="badge badge-outline badge-sm">Antara</span>
+                  <span class="badge badge-outline badge-sm">Republika</span>
+                  <span class="badge badge-outline badge-sm">Detik News</span>
+                  <span class="badge badge-outline badge-sm">Detik Finance</span>
+                  <span class="badge badge-outline badge-sm">Kompas</span>
+                  <span class="badge badge-outline badge-sm">Okezone</span>
+                  <span class="badge badge-outline badge-sm">Sindonews</span>
+                  <span class="badge badge-outline badge-sm">Kontan</span>
+                  <span class="badge badge-outline badge-sm">CNBC ID</span>
+                </div>
+              </div>
+              <div class="mb-3">
+                <h4 class="font-semibold text-sm mb-1">International Business (6)</h4>
+                <div class="flex flex-wrap gap-1">
+                  <span class="badge badge-primary badge-sm">BBC Business</span>
+                  <span class="badge badge-primary badge-sm">BBC World</span>
+                  <span class="badge badge-primary badge-sm">CNBC</span>
+                  <span class="badge badge-primary badge-sm">Bloomberg</span>
+                  <span class="badge badge-primary badge-sm">FT</span>
+                  <span class="badge badge-primary badge-sm">MarketWatch</span>
+                </div>
+              </div>
+              <div class="mb-3">
+                <h4 class="font-semibold text-sm mb-1">Asia Pacific (4)</h4>
+                <div class="flex flex-wrap gap-1">
+                  <span class="badge badge-secondary badge-sm">CNA</span>
+                  <span class="badge badge-secondary badge-sm">Nikkei Asia</span>
+                  <span class="badge badge-secondary badge-sm">SCMP</span>
+                  <span class="badge badge-secondary badge-sm">Straits Times</span>
+                </div>
+              </div>
+              <div class="mb-3">
+                <h4 class="font-semibold text-sm mb-1">International General (4)</h4>
+                <div class="flex flex-wrap gap-1">
+                  <span class="badge badge-accent badge-sm">Al Jazeera</span>
+                  <span class="badge badge-accent badge-sm">The Guardian</span>
+                  <span class="badge badge-accent badge-sm">NPR</span>
+                  <span class="badge badge-accent badge-sm">AP News</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="collapse collapse-arrow bg-base-200 mb-2">
+            <input type="checkbox" />
+            <div class="collapse-title font-medium">
+              💬 Social Media (3 active)
+            </div>
+            <div class="collapse-content">
+              <table class="table table-sm">
+                <thead>
+                  <tr><th>Source</th><th>API</th><th>Topics</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="badge badge-warning">HackerNews</span></td>
+                    <td>Algolia</td>
+                    <td>Tech, AI, Startups</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-error">Reddit</span></td>
+                    <td>RSS/Atom</td>
+                    <td>News, Finance, Indonesia</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-info">YouTube</span></td>
+                    <td>yt-dlp</td>
+                    <td>Tech podcasts, Business</td>
+                  </tr>
+                  <tr class="opacity-50">
+                    <td><span class="badge badge-neutral">X/Twitter</span></td>
+                    <td>Disabled</td>
+                    <td>—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="collapse collapse-arrow bg-base-200">
+            <input type="checkbox" />
+            <div class="collapse-title font-medium">
+              📊 Economic Indicators (27+)
+            </div>
+            <div class="collapse-content">
+              <table class="table table-sm">
+                <thead>
+                  <tr><th>Source</th><th>Data</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="badge badge-success badge-sm">Yahoo Finance</span></td>
+                    <td>11 commodities (Gold, Oil, CPO, Coffee...)</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-warning badge-sm">CoinGecko</span></td>
+                    <td>5 crypto (BTC, ETH, USDT, BNB, XRP)</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-info badge-sm">FRED</span></td>
+                    <td>6 macro (GDP, CPI, Fed Funds...)</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-error badge-sm">Bank Indonesia</span></td>
+                    <td>BI Rate, JIBOR, USD/IDR, Inflation</td>
+                  </tr>
+                  <tr>
+                    <td><span class="badge badge-neutral badge-sm">GDELT</span></td>
+                    <td>Indonesian events, instability</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Processing Pipeline -->
+      <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+          <h2 class="card-title">⚙️ Processing Pipeline</h2>
+          
+          <ul class="steps steps-vertical w-full">
+            <li class="step step-primary" data-content="1">
+              <div class="text-left ml-4">
+                <span class="font-bold">Collect</span>
+                <p class="text-sm text-base-content/70">Fetch RSS → Retry with backoff → Fallback URLs → Circuit breaker</p>
+              </div>
+            </li>
+            <li class="step step-primary" data-content="2">
+              <div class="text-left ml-4">
+                <span class="font-bold">Clean</span>
+                <p class="text-sm text-base-content/70">Strip HTML (ammonia) → Normalize → SHA256 dedup</p>
+              </div>
+            </li>
+            <li class="step step-primary" data-content="3">
+              <div class="text-left ml-4">
+                <span class="font-bold">Label</span>
+                <p class="text-sm text-base-content/70">Prof Jiang Game Theory via LLM → actors, events, signals</p>
+              </div>
+            </li>
+            <li class="step step-primary" data-content="4">
+              <div class="text-left ml-4">
+                <span class="font-bold">Embed</span>
+                <p class="text-sm text-base-content/70">TEI (multilingual-e5-base) → 768-dim vectors</p>
+              </div>
+            </li>
+            <li class="step step-secondary" data-content="5">
+              <div class="text-left ml-4">
+                <span class="font-bold">Ingest</span>
+                <p class="text-sm text-base-content/70">ArangoDB graph (articles, actors, edges) + near-dup detection</p>
+              </div>
+            </li>
+          </ul>
+
+          <div class="divider">Bagaimana Mereka Berhubungan?</div>
+
+          <div class="alert alert-info mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div>
+              <h3 class="font-bold">Ini BUKAN service terpisah!</h3>
+              <p class="text-sm">Semua modul (cleaners, labelers, embedders) adalah <strong>fase sequential dalam 1 binary Rust</strong> yang sama (<code>cargo run</code>). Data mengalir: Collect → SQLite → Clean → SQLite → Label → SQLite → Embed → ArangoDB</p>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto mb-4">
+            <table class="table table-sm table-zebra">
+              <thead>
+                <tr><th>Module</th><th>Tugas</th><th>Dependency</th><th>Output</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code class="text-xs font-bold">collectors/mod.rs</code></td>
+                  <td>Fetch data dari sources (RSS, API)</td>
+                  <td>Network only</td>
+                  <td>Raw articles → SQLite (status: <span class="badge badge-xs">pending</span>)</td>
+                </tr>
+                <tr>
+                  <td><code class="text-xs font-bold">cleaners/mod.rs</code></td>
+                  <td>Bersihkan HTML, normalize text, deduplicate</td>
+                  <td>Tidak perlu service luar</td>
+                  <td>Clean text → SQLite (status: <span class="badge badge-xs badge-success">processed</span>)</td>
+                </tr>
+                <tr>
+                  <td><code class="text-xs font-bold">labelers/mod.rs</code></td>
+                  <td>Analisis game theory (actors, events, signals)</td>
+                  <td>→ Kiromania LLM (:9000)</td>
+                  <td>JSON labels → SQLite (status: <span class="badge badge-xs badge-warning">labeled</span>)</td>
+                </tr>
+                <tr>
+                  <td><code class="text-xs font-bold">embedders/mod.rs</code></td>
+                  <td>Ubah text → vector 768-dim untuk similarity search</td>
+                  <td>→ TEI Server (:8082)</td>
+                  <td>Vectors + metadata → ArangoDB (status: <span class="badge badge-xs badge-secondary">ingested</span>)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="bg-base-200 p-3 rounded-lg text-sm">
+            <p class="font-semibold mb-1">🔑 Key Insight:</p>
+            <ul class="list-disc list-inside space-y-1 text-base-content/80">
+              <li><strong>cleaners</strong> = text processing (lokal, cepat, tanpa network)</li>
+              <li><strong>labelers</strong> = AI analysis (butuh LLM API, lambat, mahal)</li>
+              <li><strong>embedders</strong> = vectorization (butuh TEI server, untuk similarity search nanti)</li>
+              <li>SQLite sebagai "staging area" antar fase — kalau 1 fase gagal, fase sebelumnya tidak perlu diulang</li>
+            </ul>
+          </div>
+
+          <div class="divider">Pipeline Schedule</div>
+          
+          <div class="overflow-x-auto">
+            <table class="table table-sm">
+              <thead>
+                <tr><th>Pipeline</th><th>Interval</th><th>Command</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>News collector</td>
+                  <td><span class="badge badge-sm">15 min</span></td>
+                  <td><code class="text-xs">cargo run -- collect</code></td>
+                  <td><span class="badge badge-success badge-xs">Rust ✓</span></td>
+                </tr>
+                <tr>
+                  <td>Processing (clean→label→embed)</td>
+                  <td><span class="badge badge-sm">15 min</span></td>
+                  <td><code class="text-xs">cargo run -- daemon</code></td>
+                  <td><span class="badge badge-success badge-xs">Rust ✓</span></td>
+                </tr>
+                <tr>
+                  <td>Social media</td>
+                  <td><span class="badge badge-sm">2 hours</span></td>
+                  <td><code class="text-xs">cargo run -- social</code></td>
+                  <td><span class="badge badge-success badge-xs">Rust ✓</span></td>
+                </tr>
+                <tr class="opacity-50">
+                  <td>Social media (legacy)</td>
+                  <td><span class="badge badge-sm">2 hours</span></td>
+                  <td><code class="text-xs">social_intel_cron.py</code></td>
+                  <td><span class="badge badge-warning badge-xs">Python (deprecated)</span></td>
+                </tr>
+                <tr>
+                  <td>Economic data</td>
+                  <td><span class="badge badge-sm">1 hour</span></td>
+                  <td><code class="text-xs">cargo run -- economic all</code></td>
+                  <td><span class="badge badge-success badge-xs">Rust ✓</span></td>
+                </tr>
+                <tr>
+                  <td>Feed health check</td>
+                  <td><span class="badge badge-sm">Daily</span></td>
+                  <td><code class="text-xs">CI workflow</code></td>
+                  <td><span class="badge badge-info badge-xs">GitHub Actions</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alert alert-success mt-4 text-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <div>
+              <p><strong>Re: Kenapa Python?</strong> — <code>social_intel_cron.py</code> adalah legacy dari awal project. Rust port sudah ada di <code>src/social/</code> (HN, Reddit, YouTube — 44 tests pass). Python version deprecated, tinggal switch cron ke <code>cargo run -- social</code>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ArangoDB Graph Model -->
+    <div class="card bg-base-100 shadow-xl mb-8">
+      <div class="card-body">
+        <h2 class="card-title text-2xl mb-4">🥑 ArangoDB Intelligence Graph</h2>
+        <div class="mermaid">
+erDiagram
+    articles ||--o{ article_mentions_actor : "mentions"
+    articles ||--o{ article_has_topic : "tagged"
+    articles ||--o{ article_similar : "similar_to"
+    articles }|--o{ signals : "generates"
+    
+    actors ||--o{ article_mentions_actor : "mentioned_in"
+    actors ||--o{ actor_relates_actor : "relates_to"
+    
+    topics ||--o{ article_has_topic : "on_article"
+    topics ||--o{ topic_correlates : "correlates"
+    
+    economic_indicators }|--o{ signals : "generates"
+    social_posts ||--o{ article_similar : "similar_to"
+    
+    articles {
+        string _key
+        string title
+        string content
+        string source
+        datetime published_at
+        array actors
+        object prof_jiang_labels
+        array embedding_768
+    }
+    
+    actors {
+        string _key
+        string name
+        string type
+        array aliases
+    }
+    
+    topics {
+        string _key
+        string name
+        string category
+    }
+    
+    signals {
+        string _key
+        string type
+        string direction
+        float confidence
+        datetime created_at
+    }
+    
+    economic_indicators {
+        string _key
+        string symbol
+        float price
+        float change_pct
+        datetime timestamp
+    }
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+          <div class="stat bg-base-200 rounded-lg">
+            <div class="stat-title">Document Collections</div>
+            <div class="stat-value text-lg">7</div>
+          </div>
+          <div class="stat bg-base-200 rounded-lg">
+            <div class="stat-title">Edge Collections</div>
+            <div class="stat-value text-lg">6</div>
+          </div>
+          <div class="stat bg-base-200 rounded-lg">
+            <div class="stat-title">Named Graph</div>
+            <div class="stat-value text-sm">intelligence_graph</div>
+          </div>
+          <div class="stat bg-base-200 rounded-lg">
+            <div class="stat-title">Search View</div>
+            <div class="stat-value text-sm">articles_search</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prof Jiang Framework -->
+    <div class="card bg-base-100 shadow-xl mb-8">
+      <div class="card-body">
+        <h2 class="card-title text-2xl mb-4">🧠 Prof Jiang Game Theory Framework</h2>
+        <p class="mb-4 text-base-content/70">Setiap artikel dianalisis sebagai "strategic move" dalam papan geopolitik/ekonomi:</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="card bg-primary text-primary-content">
+            <div class="card-body">
+              <h3 class="card-title text-lg">👥 Actors</h3>
+              <p class="text-sm">Key players (governments, companies, individuals) with incentives & constraints</p>
+            </div>
+          </div>
+          <div class="card bg-secondary text-secondary-content">
+            <div class="card-body">
+              <h3 class="card-title text-lg">📅 Events</h3>
+              <p class="text-sm">What happened, trigger, significance, tense (past/present/future)</p>
+            </div>
+          </div>
+          <div class="card bg-accent text-accent-content">
+            <div class="card-body">
+              <h3 class="card-title text-lg">🔗 Relations</h3>
+              <p class="text-sm">Power dynamics, alliances, conflicts between actors</p>
+            </div>
+          </div>
+          <div class="card bg-info text-info-content">
+            <div class="card-body">
+              <h3 class="card-title text-lg">🌍 Context</h3>
+              <p class="text-sm">Geopolitical, economic, social background factors</p>
+            </div>
+          </div>
+          <div class="card bg-warning text-warning-content">
+            <div class="card-body">
+              <h3 class="card-title text-lg">🔄 Pattern Match</h3>
+              <p class="text-sm">Historical parallels (trade_war, currency_crisis, etc.)</p>
+            </div>
+          </div>
+          <div class="card bg-success text-success-content">
+            <div class="card-body">
+              <h3 class="card-title text-lg">📈 Investment Signal</h3>
+              <p class="text-sm">bullish / bearish / neutral / hold / defensive + confidence</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IDX Analyst -->
+    <div class="card bg-base-100 shadow-xl mb-8">
+      <div class="card-body">
+        <h2 class="card-title text-2xl mb-4">📈 IDX Analyst — 5 Persona Debate Engine</h2>
+        <div class="mermaid">
+flowchart LR
+    subgraph INPUT["Input"]
+        TICKER["Ticker Symbol<br/>(e.g., BMRI)"]
+        YAHOO["Yahoo Finance<br/>Fundamentals"]
+        GRAPH["ArangoDB<br/>ExternalSignals"]
+    end
+
+    subgraph DEBATE["5-Persona Debate"]
+        P1["🐂 Aggressive Bull"]
+        P2["📊 Value Investor"]
+        P3["⚡ Momentum Trader"]
+        P4["🛡️ Risk Manager"]
+        P5["🐻 Devil's Advocate"]
+    end
+
+    subgraph OUTPUT["Output"]
+        SIGNAL["Signal<br/>StrongBuy/Buy/Hold/Pass/Avoid"]
+        TRADE["Trade Proposal<br/>Entry/Stop/Target"]
+        RTI["RTI Business Format"]
+    end
+
+    TICKER --> YAHOO
+    TICKER --> GRAPH
+    YAHOO --> P1
+    YAHOO --> P2
+    YAHOO --> P3
+    YAHOO --> P4
+    YAHOO --> P5
+    GRAPH --> P1
+    GRAPH --> P4
+
+    P1 --> SIGNAL
+    P2 --> SIGNAL
+    P3 --> SIGNAL
+    P4 --> SIGNAL
+    P5 --> SIGNAL
+
+    SIGNAL --> TRADE
+    TRADE --> RTI
+        </div>
+        
+        <div class="mt-4">
+          <h4 class="font-semibold mb-2">Portfolio Tickers (14)</h4>
+          <div class="flex flex-wrap gap-2">
+            <span class="badge badge-lg badge-outline">KLBF</span>
+            <span class="badge badge-lg badge-outline">TLKM</span>
+            <span class="badge badge-lg badge-outline">BBRI</span>
+            <span class="badge badge-lg badge-outline">PTBA</span>
+            <span class="badge badge-lg badge-outline">BJTM</span>
+            <span class="badge badge-lg badge-outline">ADMF</span>
+            <span class="badge badge-lg badge-outline">TAPG</span>
+            <span class="badge badge-lg badge-outline">JPFA</span>
+            <span class="badge badge-lg badge-outline">TSPC</span>
+            <span class="badge badge-lg badge-outline">BMRI</span>
+            <span class="badge badge-lg badge-outline">ASII</span>
+            <span class="badge badge-lg badge-outline">ULTJ</span>
+            <span class="badge badge-lg badge-outline">HMSP</span>
+            <span class="badge badge-lg badge-outline">MNCN</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Infrastructure -->
+    <div class="card bg-base-100 shadow-xl mb-8">
+      <div class="card-body">
+        <h2 class="card-title text-2xl mb-4">🏗️ Infrastructure (Docker Compose)</h2>
+        
+        <div class="overflow-x-auto">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Service</th>
+                <th>Image</th>
+                <th>Port</th>
+                <th>Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-success">ArangoDB</span></td>
+                <td><code>arangodb:3.12</code></td>
+                <td>:8529</td>
+                <td>Primary intelligence store (graph + vectors)</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-info">Qdrant</span></td>
+                <td><code>qdrant:latest</code></td>
+                <td>:6333 / :6334</td>
+                <td>Legacy vector DB fallback</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-warning">TEI</span></td>
+                <td><code>huggingface/tei:cpu-1.5</code></td>
+                <td>:8082</td>
+                <td>Text embeddings (multilingual-e5-base, 768-dim)</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-primary">Kiromania</span></td>
+                <td><code>—</code></td>
+                <td>:9000</td>
+                <td>LLM gateway (OpenAI-compatible)</td>
+              </tr>
+              <tr class="opacity-60">
+                <td><span class="badge badge-neutral">Redis</span></td>
+                <td><code>redis:7</code></td>
+                <td>:6379</td>
+                <td>Optional caching</td>
+              </tr>
+              <tr class="opacity-60">
+                <td><span class="badge badge-neutral">PostgreSQL</span></td>
+                <td><code>postgres:16</code></td>
+                <td>:5432</td>
+                <td>Optional relational DB</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="alert alert-info mt-4">
+          <span>💡 Start infrastructure: <code>cd infrastructure && docker compose up -d</code></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Proposed Dashboard Monolith -->
+    <div class="card bg-base-100 shadow-xl mb-8 border-2 border-warning">
+      <div class="card-body">
+        <h2 class="card-title text-2xl mb-4">🖥️ Proposed: Dashboard Monolith (BFF + Frontend)</h2>
+        <div class="badge badge-warning mb-4">REFACTOR PROPOSAL</div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div class="bg-error/10 p-4 rounded-lg">
+            <h4 class="font-bold text-error mb-2">❌ Current (2 services)</h4>
+            <ul class="text-sm space-y-1">
+              <li>• Rust API (:8888) — REST endpoints</li>
+              <li>• Rust WebSocket (:8889) — real-time</li>
+              <li>• Next.js (:3000) — separate frontend</li>
+              <li>→ 2 Docker images, separate deploy</li>
+            </ul>
+          </div>
+          <div class="bg-success/10 p-4 rounded-lg">
+            <h4 class="font-bold text-success mb-2">✅ Proposed (1 monolith)</h4>
+            <ul class="text-sm space-y-1">
+              <li>• Next.js fullstack (:3000)</li>
+              <li>• API Routes = BFF (langsung query ArangoDB)</li>
+              <li>• Server Actions for mutations</li>
+              <li>• WebSocket via Next.js middleware</li>
+              <li>→ 1 Docker image, lightweight, single deploy</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead><tr><th>Stack Option</th><th>Size</th><th>Pro</th><th>Con</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-primary badge-sm">Next.js 16</span></td>
+                <td>~200MB image</td>
+                <td>Already exists (nextjs-intelligence-dashboard/), RSC, streaming</td>
+                <td>Node.js runtime overhead</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-secondary badge-sm">SvelteKit</span></td>
+                <td>~80MB image</td>
+                <td>Smaller, faster, simpler</td>
+                <td>Rewrite needed, smaller ecosystem</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-accent badge-sm">Rust (Leptos/Axum)</span></td>
+                <td>~30MB image</td>
+                <td>Smallest, already Rust stack</td>
+                <td>SSR Rust is still immature, slower DX</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="alert mt-4 text-sm">
+          <p><strong>Recommendation:</strong> Next.js monolith — sudah ada scaffolding, ArangoDB driver ada (arangojs), dan BFF pattern cukup mature. Single <code>docker build</code> → single image (:3000). Remove Rust API (:8888/:8889) setelah semua endpoint di-port ke Next.js API Routes.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center text-base-content/50 py-8">
+      <p>Hermes Data Pipeline — Feeding AI Agents with Structured Intelligence</p>
+      <p class="text-sm">Pagupon Group Internal Use</p>
+    </div>
+  </div>
+
+</body>
+</html>

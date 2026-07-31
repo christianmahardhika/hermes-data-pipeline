@@ -16,6 +16,59 @@ This file is maintained by the Retrospective Agent. It captures learnings from e
 
 <!-- New entries go here, above the line -->
 
+## 2026-07-31 — Pipeline Re-Architecture Spec Tasks Generation
+
+### Learning 63: Pre-write hooks for code validation should NOT block markdown/documentation files
+**Issue**: When generating `tasks.md` for pipeline-re-architecture spec, the pre-write hook for Rust/Python code validation intercepted the write operation, requiring manual acknowledgment that markdown files don't need code validation.
+**Root Cause**: Hook configured with broad file pattern matching doesn't distinguish between source code (`.rs`, `.py`) and documentation (`.md`). The hook prompt asks to validate Rust/Python patterns regardless of file type.
+**Learning**: (1) Pre-write code validation hooks should include early-exit clause: "If file extension is `.md`, `.yaml`, `.json`, `.toml`, `.html` — auto-approve (documentation/config files)", (2) Current friction adds 1 extra turn per documentation write, (3) Alternative: use `when.patterns` in hook config to explicitly target only `**/*.rs` and `**/*.py` files, not all writes.
+**Action Taken**: Documented. Proceed was correct since markdown doesn't need code validation. Recommend updating hook to exclude non-code files.
+
+### Learning 64: Large spec tasks.md benefits from structured dependency visualization — JSON waves + ASCII graph
+**Issue**: Pipeline re-architecture spec has 44 tasks across 8 phases. Users need to understand both the sequential order AND parallel opportunities within each phase.
+**Root Cause**: Linear task lists don't convey which tasks can be parallelized vs which have hard dependencies.
+**Learning**: For specs with >20 tasks: (1) Use JSON `waves` structure to group tasks by phase with description, (2) Add ASCII visual dependency graph showing parallel vs sequential relationships, (3) Include "Quality Gates" table — what must pass before proceeding to next phase, (4) Include "Breaking Changes" section — what existing behavior will change, (5) Include "Rollback Strategy" — how to undo if things go wrong. This structure makes large specs actionable without overwhelming readers.
+**Action Taken**: Created tasks.md with all 5 components. 44 tasks organized into 8 phases with clear dependencies and quality gates.
+
+## 2026-07-31 — Context Compaction Recovery Session
+
+### Learning 61: Multi-crate monorepo structure needs explicit documentation in steering files
+**Issue**: During context recovery, found `src/social_sentiment.rs` in active editor. Initial assumption was it belonged to the main pipeline, but investigation revealed it belongs to a **separate crate** (`intelligence-system-rust` at root level) — the web dashboard backend.
+**Root Cause**: The repository has multiple Rust crates that aren't clearly documented in steering files:
+- Root level `src/`: `intelligence-system-rust` (web dashboard, builds with 57 warnings)
+- `news-social-intelligence-data-pipeline/src/`: Main pipeline (148 tests)
+The `structure.md` steering file documents the pipeline structure but doesn't mention the root-level dashboard crate.
+**Learning**: (1) Monorepos with multiple entry points MUST document ALL crates in `structure.md`, including their purpose, build commands, and relationship to each other, (2) When an agent encounters a file in `/src/` at root level vs `/subdirectory/src/`, it should first check `Cargo.toml` at each level to understand which crate the file belongs to, (3) Active editor files in a new session may belong to different crates than the main work context — always verify before making assumptions.
+**Action Taken**: Documented. Recommend updating `structure.md` to include root-level `intelligence-system-rust` crate documentation.
+
+### Learning 62: Context compaction summaries are accurate but require file re-reads to restore working state
+**Issue**: After context compaction, the summary correctly stated completed work and pending items. However, agent still needed to re-read 4+ files to re-establish full working context (spec files, learnings, source files).
+**Root Cause**: Context compaction preserves high-level state (what was done, what files exist) but doesn't preserve detailed content (specific code patterns, exact field names, test counts). This is expected and correct behavior — the summary shouldn't attempt to preserve everything.
+**Learning**: (1) After context compaction, treat first few tool calls as "context restoration" — read key files before attempting to answer or continue work, (2) Summaries should include "Files to read" section listing the most critical files for context restoration (this was already done correctly), (3) Don't assume details from summary — always verify by reading actual files (e.g., test count was stated as "148" and verified as correct).
+**Action Taken**: No change needed — current compaction behavior is correct. This learning validates the pattern.
+
+## 2026-07-31 — System Topology Visualization with Lavish-axi
+
+### Learning 59: Shell validation hooks should distinguish between write operations and read-only process management
+**Issue**: The pre-write shell validation hook intercepted `control_bash_process` (start background job) and `get_process_output` (read terminal output), requiring manual approval for safe read-only operations.
+**Root Cause**: Hook configured with `toolTypes: ["shell"]` or broad tool matching intercepts ALL shell-related tools, not just destructive commands. Background process management and output reading are operationally similar to "shell" but carry no risk.
+**Learning**: (1) Shell validation hooks should have a whitelist for safe operations: `control_bash_process` (process management), `get_process_output` (read-only), `list_processes` (read-only). (2) Alternatively, the hook prompt should explicitly auto-approve these tools: "If tool is `get_process_output` or `control_bash_process` with action `start` for development tools (npm, cargo, python), auto-approve." (3) The current friction slows down long-running tool workflows like lavish-axi poll by 3-4x due to repeated approvals.
+**Action Taken**: Documented. Recommend updating shell validation hook to whitelist read-only process tools or add early-exit clause for development tools.
+
+### Learning 60: Lavish-axi poll is a long-running command — MUST use background process facility
+**Issue**: Running `npx -y lavish-axi poll` with synchronous `execute_bash` times out after 15 seconds because poll waits indefinitely for user feedback.
+**Root Cause**: Lavish-axi poll is designed to long-poll until user sends feedback, ends session, or browser reports layout warnings. It stays silent the entire time — this is expected behavior, not a timeout failure.
+**Learning**: For lavish-axi workflow: (1) ALWAYS use `control_bash_process` with `action: start` for poll commands, (2) The poll returning "Command timed out" is NOT a failure — it means no user feedback yet, (3) Check poll output periodically with `get_process_output`, (4) Poll can be killed/restarted safely — queued feedback is never lost, (5) When poll returns actual feedback, apply changes to HTML, then run poll again with `--agent-reply` message.
+**Action Taken**: Started poll as background process (terminalId: 5). Session verified active at http://127.0.0.1:4387/session/82e80026b7b71469.
+
+## 2026-07-31 — Adding External Skills (lavish-axi, hallmark-design)
+
+### Learning 58: Symlinks to external locations for skills break when target doesn't exist — copy content instead
+**Issue**: User wanted to add `lavish-axi` skill. Found `.kiro/skills/lavish` as a symlink pointing to `../../.agents/skills/lavish` — target didn't exist.
+**Root Cause**: Skill was added via symlink to an external npm package location (`~/.npm/_npx/.../lavish-axi/skills/lavish/`) or intended external folder, but the target was never created or was removed during npm cache cleanup.
+**Learning**: For skills from external sources (npm packages, shared folders): (1) NEVER use symlinks — they break when the target moves, is cleaned up, or doesn't exist on other machines, (2) ALWAYS copy the content into `.kiro/skills/` as a regular markdown file, (3) External skills often live in npm cache (`~/.npm/_npx/`) which is volatile and can be cleaned. Use `find ~ -name "*skill*" -type f 2>/dev/null` to locate source content when symlink is broken.
+**Action Taken**: Removed broken symlink. Found source at `~/.npm/_npx/.../lavish-axi/skills/lavish/SKILL.md`. Created `.kiro/skills/lavish-axi.md` with adapted content. Both skills now have `inclusion: manual` for on-demand activation.
+
 ## 2026-07-31 — Dashboard Not Showing Production Data
 
 ### Learning 57: Environment variable naming must be consistent across all components in a monorepo
