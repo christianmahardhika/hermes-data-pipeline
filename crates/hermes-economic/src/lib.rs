@@ -7,11 +7,13 @@ pub mod commodity;
 pub mod correlation;
 pub mod indicators;
 pub mod bi_rate;
+pub mod bps;
 
 pub use commodity::{CommodityTracker, CommodityPrice, CommodityType};
 pub use correlation::{StockCorrelationEngine, CorrelationMatrix, PortfolioCorrelation};
 pub use indicators::{EconomicIndicators, MarketSentiment, TrendAnalysis};
 pub use bi_rate::{BIRateMonitor, InterestRateData, MonetaryPolicy};
+pub use bps::{BPSCollector, BPSAnalyst, BPSDataPoint, BPSConfig, BPSVariableCategory, BPSPriority};
 
 use anyhow::Result;
 use hermes_common::types::IndonesianStock;
