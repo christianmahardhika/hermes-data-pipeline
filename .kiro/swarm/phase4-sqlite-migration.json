@@ -1,0 +1,14 @@
+{
+  "id": "phase4-sqlite-migration",
+  "type": "migrate-data",
+  "spec_path": ".kiro/specs/pipeline-re-architecture",
+  "instruction": "Execute Phase 4: SQLite Migration (Tasks 17-19). Create migration script, run migration on staging data, remove SQLite dependencies. Use model auto for implementation.",
+  "context": {
+    "phase": "Phase 4 - SQLite Migration",
+    "tasks": [17, 18, 19],
+    "branch": "feature/pipeline-re-architecture",
+    "constraints": ["Data integrity required", "No data loss", "Backup before migration"],
+    "model": "auto",
+    "automation_level": "full"
+  }
+}

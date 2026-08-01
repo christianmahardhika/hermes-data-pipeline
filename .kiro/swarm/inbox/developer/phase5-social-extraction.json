@@ -1,0 +1,37 @@
+{
+  "id": "phase5-social-extraction",
+  "type": "extract-service",
+  "spec_path": ".kiro/specs/pipeline-re-architecture",
+  "instruction": "Execute Phase 5: Extract hermes-social Service (Tasks 20-25). Create social intelligence service, migrate HackerNews/Reddit/YouTube collectors, deprecate Python social_intel module. Use model auto for implementation.",
+  "context": {
+    "phase": "Phase 5 - Social Intelligence Service",
+    "tasks": [
+      20,
+      21,
+      22,
+      23,
+      24,
+      25
+    ],
+    "branch": "feature/pipeline-re-architecture",
+    "constraints": [
+      "TDD required",
+      "768-dim TEI embeddings",
+      "ArangoDB social_posts collection"
+    ],
+    "model": "auto",
+    "automation_level": "full",
+    "dependencies": [
+      "hermes-common",
+      "Phase 1-4 complete"
+    ],
+    "deliverables": [
+      "hermes-social crate",
+      "CLI commands",
+      "Python deprecation"
+    ]
+  },
+  "timestamp": "2026-07-31T23:26:38Z",
+  "from": "orchestrator",
+  "to": "developer"
+}

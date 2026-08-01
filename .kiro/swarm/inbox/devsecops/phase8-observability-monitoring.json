@@ -1,0 +1,44 @@
+{
+  "id": "phase8-observability-monitoring",
+  "type": "finalize-system",
+  "spec_path": ".kiro/specs/pipeline-re-architecture",
+  "instruction": "Execute FINAL Phase 8: Observability & Monitoring (Tasks 38-44). Complete pipeline re-architecture with comprehensive observability, monitoring dashboards, alerting systems, performance metrics, security monitoring. Use model auto for aggressive final implementation.",
+  "context": {
+    "phase": "Phase 8 - FINAL: Observability & Monitoring System",
+    "tasks": [
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44
+    ],
+    "branch": "feature/pipeline-re-architecture",
+    "constraints": [
+      "Production-ready monitoring",
+      "Security compliance",
+      "Performance dashboards",
+      "Alert systems",
+      "Health checks"
+    ],
+    "model": "auto",
+    "automation_level": "maximum",
+    "dependencies": [
+      "Phase 1-7 complete",
+      "All services extracted"
+    ],
+    "deliverables": [
+      "Monitoring dashboard",
+      "Alert systems",
+      "Health checks",
+      "Security monitoring",
+      "Performance metrics",
+      "Production deployment",
+      "Complete pipeline re-architecture"
+    ]
+  },
+  "timestamp": "2026-07-31T23:49:14Z",
+  "from": "orchestrator",
+  "to": "devsecops"
+}

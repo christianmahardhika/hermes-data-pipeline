@@ -19,8 +19,9 @@ rss = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
-# SQLite
-rusqlite = { version = "0.32", features = ["bundled"] }
+# Database and storage
+# SQLite removed - using ArangoDB directly via hermes-common
+# rusqlite = { version = "0.32", features = ["bundled"] }
 
 # Qdrant
 qdrant-client = "1"
