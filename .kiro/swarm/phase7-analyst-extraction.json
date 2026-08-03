@@ -1,0 +1,16 @@
+{
+  "id": "phase7-analyst-extraction",
+  "type": "extract-service",
+  "spec_path": ".kiro/specs/pipeline-re-architecture",
+  "instruction": "Execute Phase 7: Extract hermes-analyst Service (Tasks 32-37). Create advanced analyst intelligence service for Prof Jiang framework integration, geopolitical analysis, investment signals generation. Use model auto for aggressive implementation.",
+  "context": {
+    "phase": "Phase 7 - Advanced Analyst Intelligence Service",
+    "tasks": [32, 33, 34, 35, 36, 37],
+    "branch": "feature/pipeline-re-architecture",
+    "constraints": ["TDD required", "Prof Jiang framework", "Geopolitical analysis", "Investment signals", "Pattern matching"],
+    "model": "auto",
+    "automation_level": "full",
+    "dependencies": ["hermes-common", "Phase 1-6 complete"],
+    "deliverables": ["hermes-analyst crate", "Prof Jiang analyzer", "Geopolitical engine", "Investment signals", "Pattern matcher", "Decision framework"]
+  }
+}

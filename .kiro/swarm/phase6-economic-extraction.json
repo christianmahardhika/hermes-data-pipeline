@@ -1,0 +1,16 @@
+{
+  "id": "phase6-economic-extraction",
+  "type": "extract-service",
+  "spec_path": ".kiro/specs/pipeline-re-architecture",
+  "instruction": "Execute Phase 6: Extract hermes-economic Service (Tasks 26-31). Create economic intelligence service for commodity tracking, BI Rate monitoring, Indonesian stock correlation analysis. Use model auto for aggressive implementation.",
+  "context": {
+    "phase": "Phase 6 - Economic Intelligence Service",
+    "tasks": [26, 27, 28, 29, 30, 31],
+    "branch": "feature/pipeline-re-architecture",
+    "constraints": ["TDD required", "Real-time commodity data", "BI Rate integration", "INCO/PTBA/TAPG correlations"],
+    "model": "auto",
+    "automation_level": "full",
+    "dependencies": ["hermes-common", "Phase 1-5 complete"],
+    "deliverables": ["hermes-economic crate", "Commodity trackers", "Stock correlation engine", "Economic indicators API"]
+  }
+}

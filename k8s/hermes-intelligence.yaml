@@ -1,0 +1,595 @@
+# Hermes Intelligence Pipeline - Kubernetes Production Deployment
+# Task 43: Production Deployment Configuration
+# Complete Kubernetes manifests for Indonesian intelligence pipeline
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hermes-intelligence
+  labels:
+    app.kubernetes.io/name: hermes-intelligence
+    app.kubernetes.io/component: namespace
+
+---
+# ConfigMap for Indonesian Intelligence Pipeline Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hermes-config
+  namespace: hermes-intelligence
+data:
+  # Indonesian Market Configuration
+  INDONESIAN_STOCKS: "BMRI,BBRI,INCO,ANTM,PTBA,TAPG"
+  PROF_JIANG_ENABLED: "true"
+  GEOPOLITICAL_ANALYSIS: "true"
+  
+  # Database Configuration
+  ARANGO_DATABASE: "hermes"
+  ARANGO_USERNAME: "hermes"
+  
+  # Performance Configuration
+  TOKIO_WORKER_THREADS: "4"
+  MAX_CONNECTIONS: "100"
+  RUST_LOG: "info"
+  
+  # Service Discovery
+  HERMES_COLLECTOR_URL: "http://hermes-collector:8881"
+  HERMES_PROCESSOR_URL: "http://hermes-processor:8882"
+  HERMES_SOCIAL_URL: "http://hermes-social:8883"
+  HERMES_ECONOMIC_URL: "http://hermes-economic:8884"
+  HERMES_ANALYST_URL: "http://hermes-analyst:8885"
+
+---
+# Secrets for Production Deployment
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hermes-secrets
+  namespace: hermes-intelligence
+type: Opaque
+data:
+  # Base64 encoded secrets (replace with actual values)
+  jwt-secret: aGVybWVzLWludGVsbGlnZW5jZS1qd3Qtc2VjcmV0LWtleQ==
+  arango-password: aGVybWVzLWFyYW5nb2RiLXBhc3N3b3Jk
+  redis-password: aGVybWVzLXJlZGlzLXBhc3N3b3Jk
+
+---
+# Hermes Collector Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-collector
+  namespace: hermes-intelligence
+  labels:
+    app.kubernetes.io/name: hermes-collector
+    app.kubernetes.io/component: collector
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hermes-collector
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hermes-collector
+    spec:
+      containers:
+      - name: hermes-collector
+        image: hermes-intelligence:latest
+        command: ["/app/bin/hermes-collector"]
+        ports:
+        - containerPort: 8881
+        envFrom:
+        - configMapRef:
+            name: hermes-config
+        env:
+        - name: ARANGO_URL
+          value: "arangodb://arangodb:8529"
+        - name: ARANGO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: hermes-secrets
+              key: arango-password
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8881
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8881
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+# Hermes Processor Deployment  
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-processor
+  namespace: hermes-intelligence
+  labels:
+    app.kubernetes.io/name: hermes-processor
+    app.kubernetes.io/component: processor
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hermes-processor
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hermes-processor
+    spec:
+      containers:
+      - name: hermes-processor
+        image: hermes-intelligence:latest
+        command: ["/app/bin/hermes-processor"]
+        ports:
+        - containerPort: 8882
+        envFrom:
+        - configMapRef:
+            name: hermes-config
+        env:
+        - name: ARANGO_URL
+          value: "arangodb://arangodb:8529"
+        - name: ARANGO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: hermes-secrets
+              key: arango-password
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8882
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8882
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+# Hermes Social Intelligence Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-social
+  namespace: hermes-intelligence
+  labels:
+    app.kubernetes.io/name: hermes-social
+    app.kubernetes.io/component: social-intelligence
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hermes-social
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hermes-social
+    spec:
+      containers:
+      - name: hermes-social
+        image: hermes-intelligence:latest
+        command: ["/app/bin/hermes-social"]
+        ports:
+        - containerPort: 8883
+        envFrom:
+        - configMapRef:
+            name: hermes-config
+        env:
+        - name: ARANGO_URL
+          value: "arangodb://arangodb:8529"
+        - name: ARANGO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: hermes-secrets
+              key: arango-password
+        - name: REDIS_URL
+          value: "redis://redis:6379"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: hermes-secrets
+              key: redis-password
+        resources:
+          requests:
+            memory: "384Mi"
+            cpu: "375m"
+          limits:
+            memory: "768Mi"
+            cpu: "750m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8883
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8883
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+# Hermes Economic Intelligence Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-economic
+  namespace: hermes-intelligence
+  labels:
+    app.kubernetes.io/name: hermes-economic
+    app.kubernetes.io/component: economic-intelligence
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hermes-economic
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hermes-economic
+    spec:
+      containers:
+      - name: hermes-economic
+        image: hermes-intelligence:latest
+        command: ["/app/bin/hermes-economic"]
+        ports:
+        - containerPort: 8884
+        envFrom:
+        - configMapRef:
+            name: hermes-config
+        env:
+        - name: ARANGO_URL
+          value: "arangodb://arangodb:8529"
+        - name: ARANGO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: hermes-secrets
+              key: arango-password
+        resources:
+          requests:
+            memory: "384Mi"
+            cpu: "375m"
+          limits:
+            memory: "768Mi"
+            cpu: "750m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8884
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8884
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+# Hermes Analyst Deployment (Prof Jiang Framework)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-analyst
+  namespace: hermes-intelligence
+  labels:
+    app.kubernetes.io/name: hermes-analyst
+    app.kubernetes.io/component: prof-jiang-analysis
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hermes-analyst
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hermes-analyst
+    spec:
+      containers:
+      - name: hermes-analyst
+        image: hermes-intelligence:latest
+        command: ["/app/bin/hermes-analyst"]
+        ports:
+        - containerPort: 8885
+        envFrom:
+        - configMapRef:
+            name: hermes-config
+        env:
+        - name: ARANGO_URL
+          value: "arangodb://arangodb:8529"
+        - name: ARANGO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: hermes-secrets
+              key: arango-password
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: hermes-secrets
+              key: jwt-secret
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8885
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8885
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+# Service Definitions for Load Balancing
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-collector
+  namespace: hermes-intelligence
+  labels:
+    app.kubernetes.io/name: hermes-collector
+spec:
+  selector:
+    app.kubernetes.io/name: hermes-collector
+  ports:
+  - port: 8881
+    targetPort: 8881
+    name: http
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-processor
+  namespace: hermes-intelligence
+  labels:
+    app.kubernetes.io/name: hermes-processor
+spec:
+  selector:
+    app.kubernetes.io/name: hermes-processor
+  ports:
+  - port: 8882
+    targetPort: 8882
+    name: http
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-social
+  namespace: hermes-intelligence
+  labels:
+    app.kubernetes.io/name: hermes-social
+spec:
+  selector:
+    app.kubernetes.io/name: hermes-social
+  ports:
+  - port: 8883
+    targetPort: 8883
+    name: http
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-economic
+  namespace: hermes-intelligence
+  labels:
+    app.kubernetes.io/name: hermes-economic
+spec:
+  selector:
+    app.kubernetes.io/name: hermes-economic
+  ports:
+  - port: 8884
+    targetPort: 8884
+    name: http
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-analyst
+  namespace: hermes-intelligence
+  labels:
+    app.kubernetes.io/name: hermes-analyst
+spec:
+  selector:
+    app.kubernetes.io/name: hermes-analyst
+  ports:
+  - port: 8885
+    targetPort: 8885
+    name: http
+  type: ClusterIP
+
+---
+# Load Balancer for External Access to Indonesian Intelligence Pipeline
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-intelligence-lb
+  namespace: hermes-intelligence
+  labels:
+    app.kubernetes.io/name: hermes-intelligence
+    app.kubernetes.io/component: load-balancer
+spec:
+  selector:
+    app.kubernetes.io/name: hermes-analyst  # Main API gateway
+  ports:
+  - port: 80
+    targetPort: 8885
+    name: http
+  - port: 443
+    targetPort: 8885
+    name: https
+  type: LoadBalancer
+  loadBalancerSourceRanges:
+  # Indonesian IP ranges for enhanced security
+  - "202.150.0.0/16"    # Indonesian ISP ranges
+  - "203.142.0.0/16"    # IDX and banking infrastructure
+  
+---
+# Ingress for Indonesian Intelligence Pipeline
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hermes-intelligence-ingress
+  namespace: hermes-intelligence
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "300"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    # Indonesian market specific annotations
+    nginx.ingress.kubernetes.io/whitelist-source-range: "202.150.0.0/16,203.142.0.0/16"
+spec:
+  tls:
+  - hosts:
+    - hermes-intelligence.indonesian-market.local
+    secretName: hermes-intelligence-tls
+  rules:
+  - host: hermes-intelligence.indonesian-market.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: hermes-analyst
+            port:
+              number: 8885
+      - path: /api/collector
+        pathType: Prefix
+        backend:
+          service:
+            name: hermes-collector
+            port:
+              number: 8881
+      - path: /api/processor
+        pathType: Prefix
+        backend:
+          service:
+            name: hermes-processor
+            port:
+              number: 8882
+      - path: /api/social
+        pathType: Prefix
+        backend:
+          service:
+            name: hermes-social
+            port:
+              number: 8883
+      - path: /api/economic
+        pathType: Prefix
+        backend:
+          service:
+            name: hermes-economic
+            port:
+              number: 8884
+
+---
+# Horizontal Pod Autoscaler for Dynamic Scaling
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hermes-processor-hpa
+  namespace: hermes-intelligence
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: hermes-processor
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+# Network Policy for Indonesian Intelligence Security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hermes-intelligence-network-policy
+  namespace: hermes-intelligence
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: hermes-intelligence
+    - podSelector: {}
+  - from: []
+    ports:
+    - protocol: TCP
+      port: 8881  # collector
+    - protocol: TCP
+      port: 8882  # processor
+    - protocol: TCP
+      port: 8883  # social
+    - protocol: TCP
+      port: 8884  # economic
+    - protocol: TCP
+      port: 8885  # analyst
+  egress:
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 8529  # ArangoDB
+    - protocol: TCP
+      port: 6379  # Redis
+    - protocol: TCP
+      port: 443   # HTTPS outbound for Indonesian market data
+    - protocol: TCP
+      port: 53    # DNS
+    - protocol: UDP
+      port: 53    # DNS

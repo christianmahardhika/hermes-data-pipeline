@@ -1,0 +1,38 @@
+[package]
+name = "hermes-common"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+
+# Async runtime
+tokio = { workspace = true }
+
+# Async utilities
+async-trait = { workspace = true }
+
+# Logging and observability
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+
+# JSON processing
+serde_json = "1.0"
+
+# HTTP client for ArangoDB and external APIs
+# Use rustls-tls (pure Rust) instead of native-tls (OpenSSL)
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+
+# Time handling
+chrono = { workspace = true }
+
+# Configuration management
+config = { workspace = true }
+
+# UUID generation
+uuid = { workspace = true }
