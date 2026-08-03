@@ -45,6 +45,17 @@ class FDICDataFetcher:
         self.db_path = Path(db_path)
         self.rate_limit_delay = rate_limit_delay
         self.conn = sqlite3.connect(str(self.db_path))
+        self._setup_tables()
+    
+    def _setup_tables(self):
+        """Create tables if they don't exist"""
+        # Use absolute path to schema file
+        script_dir = Path(__file__).parent.parent.parent
+        schema_path = script_dir / 'staging' / 'schema.sql'
+        
+        with open(schema_path, 'r') as f:
+            self.conn.executescript(f.read())
+        self.conn.commit()
         
     def fetch_bank_summary(self) -> Optional[Dict]:
         """Fetch US banking industry summary statistics."""

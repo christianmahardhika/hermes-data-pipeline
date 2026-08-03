@@ -50,8 +50,12 @@ class BOJDataFetcher:
         self._setup_tables()
         
     def _setup_tables(self):
-        """Ensure staging tables exist."""
-        with open('staging/schema.sql', 'r') as f:
+        """Create tables if they don't exist"""
+        # Use absolute path to schema file
+        script_dir = Path(__file__).parent.parent.parent
+        schema_path = script_dir / 'staging' / 'schema.sql'
+        
+        with open(schema_path, 'r') as f:
             self.conn.executescript(f.read())
         self.conn.commit()
     

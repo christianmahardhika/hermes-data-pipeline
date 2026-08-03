@@ -5,26 +5,21 @@
 //! Prof Jiang Game Theory Framework:
 //! Event = Actor (incentives, constraints) + Action + Target + Context
 
-mod collectors;
-mod cleaners;
-mod labelers;
-mod embedders;
+// Storage-dependent modules commented out - using ArangoDB via hermes-common
+// mod collectors;
+// mod cleaners;
+// mod labelers;
+// mod embedders;
+// pub mod health;
+// pub mod unlimited;
+
 pub mod storage;
-pub mod health;
 pub mod social;
-pub mod unlimited;
 pub mod idx_analyst;
 pub mod economic;
 pub mod arangodb;
 
-pub use collectors::RssCollector;
-pub use collectors::{FeedConfig, FeedCategory, CollectStats, CategoryStats, CircuitState};
-pub use cleaners::ArticleCleaner;
-pub use labelers::KiroLabeler;
-pub use embedders::TeiEmbedder;
-pub use storage::{Database, RawFeed, CleanedArticle, LabeledArticle};
-pub use health::KiroHealth;
-pub use unlimited::UnlimitedCollector;
+// Re-export main components still in use
 pub use economic::{EconomicIndicator, EconomicSource};
 
 /// Pipeline configuration
