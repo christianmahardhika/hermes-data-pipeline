@@ -24,8 +24,9 @@ tracing-subscriber = { workspace = true, features = ["env-filter"] }
 # JSON processing
 serde_json = "1.0"
 
-# TODO: Add HTTP client when OpenSSL dependencies resolved
-# reqwest = { workspace = true }
+# HTTP client for ArangoDB and external APIs
+# Use rustls-tls (pure Rust) instead of native-tls (OpenSSL)
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 
 # Time handling
 chrono = { workspace = true }
@@ -35,8 +36,3 @@ config = { workspace = true }
 
 # UUID generation
 uuid = { workspace = true }
-
-# TODO: Add when needed for actual HTTP calls in collector services
-# reqwest = { workspace = true }
-# TODO: Add arangors when we need real database connection
-# arangors = { workspace = true }
