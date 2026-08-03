@@ -57,6 +57,7 @@ pub trait SocialCollector {
 /// Main social collection orchestrator
 pub struct SocialCollectorOrchestrator {
     collectors: Vec<Box<dyn SocialCollector + Send + Sync>>,
+    indonesian_stocks: Vec<IndonesianStock>,
 }
 
 impl SocialCollectorOrchestrator {
@@ -167,7 +168,7 @@ impl SocialCollectorOrchestrator {
                 };
                 
                 if stock_codes.iter().any(|code| combined_text.contains(code)) {
-                    detected_stocks.push(*stock);
+                    detected_stocks.push(stock.clone());
                 }
             }
             
