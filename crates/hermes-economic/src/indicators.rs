@@ -1,5 +1,6 @@
 /// Economic indicators and market sentiment analysis for Indonesian economy
 use anyhow::{Result, anyhow};
+use rust_decimal::prelude::ToPrimitive;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

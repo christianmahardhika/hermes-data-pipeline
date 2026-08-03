@@ -1,0 +1,35 @@
+# Hermes Intelligence Pipeline Configuration
+# Production deployment configuration for Indonesian market intelligence
+
+[database]
+url = "arangodb://localhost:8529"
+database = "hermes"
+username = "hermes"
+password = "hermes-password"
+
+[security]
+jwt_secret = "hermes-intelligence-pipeline-jwt-secret-production"
+rate_limit_rpm = 300
+enable_cors = true
+
+[indonesian_market]
+stocks = ["BMRI", "BBRI", "INCO", "ANTM", "PTBA", "TAPG"]
+enable_real_time = true
+commodity_tracking = true
+
+[prof_jiang]
+enabled = true
+confidence_threshold = 0.6
+geopolitical_analysis = true
+indonesian_relevance = true
+
+[services]
+collector_port = 8881
+processor_port = 8882
+social_port = 8883
+economic_port = 8884
+analyst_port = 8885
+
+[logging]
+level = "info"
+output = "stdout"

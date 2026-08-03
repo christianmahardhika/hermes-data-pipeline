@@ -55,10 +55,8 @@ pub trait SocialCollector {
 }
 
 /// Main social collection orchestrator
-#[derive(Debug)]
 pub struct SocialCollectorOrchestrator {
     collectors: Vec<Box<dyn SocialCollector + Send + Sync>>,
-    indonesian_stocks: Vec<IndonesianStock>,
 }
 
 impl SocialCollectorOrchestrator {
@@ -160,6 +158,11 @@ impl SocialCollectorOrchestrator {
                     IndonesianStock::INCO => vec!["inco", "vale indonesia", "nickel"],
                     IndonesianStock::ANTM => vec!["antm", "aneka tambang", "antam"],
                     IndonesianStock::PTBA => vec!["ptba", "bukit asam", "coal"],
+                    IndonesianStock::TLKM => vec!["tlkm", "telkom"],
+                    IndonesianStock::ASII => vec!["asii", "astra"],
+                    IndonesianStock::KLBF => vec!["klbf", "kalbe"],
+                    IndonesianStock::TSPC => vec!["tspc", "tempo scan"],
+                    IndonesianStock::BSDE => vec!["bsde", "bumi serpong"],
                     IndonesianStock::TAPG => vec!["tapg", "triputra agro"],
                 };
                 

@@ -1,7 +1,7 @@
 [package]
 name = "hermes-economic"
 version = "0.1.0"
-edition = "2021"
+edition.workspace = true
 
 [dependencies]
 # Shared Hermes common library
@@ -30,7 +30,7 @@ chrono = { workspace = true, features = ["serde"] }
 uuid = { workspace = true, features = ["serde", "v4"] }
 
 # HTTP client for economic APIs (trait-based for testing)
-reqwest = { version = "0.11", features = ["json", "stream"] }
+reqwest = { version = "0.11", features = ["json", "stream", "rustls-tls"], default-features = false }
 
 # Mathematical calculations for correlations and indicators
 nalgebra = "0.32"

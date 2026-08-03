@@ -1,0 +1,49 @@
+{
+  "project": "news-intelligence-correlation-system",
+  "version": "1.0.0",
+  "orchestrator": {
+    "enabled": true,
+    "parallel_execution": true,
+    "max_agents": 5,
+    "enterprise_validation": true
+  },
+  "phases": {
+    "foundation": {
+      "duration": "1 week",
+      "agents": ["backend-rust", "ml-nlp"],
+      "validation": "tdd"
+    },
+    "jiang-integration": {
+      "duration": "1 week", 
+      "agents": ["knowledge-systems", "data-science"],
+      "validation": "pattern-accuracy"
+    },
+    "api-integration": {
+      "duration": "1 week",
+      "agents": ["backend-api", "systems-integration"], 
+      "validation": "integration-tests"
+    },
+    "frontend-dashboard": {
+      "duration": "1 week",
+      "agents": ["frontend-typescript", "frontend-integration"],
+      "validation": "e2e-tests"
+    },
+    "testing-deployment": {
+      "duration": "1 week",
+      "agents": ["qa-specialist", "devsecops"],
+      "validation": "security-performance"
+    }
+  },
+  "integration_points": {
+    "intelligence_system": "localhost:8888",
+    "dashboard_frontend": "localhost:3002", 
+    "bps_integration": "app_id_71eeba17f4f1e4b6ef253886c04ec49e",
+    "prof_jiang_kb": "social-politic-kb"
+  },
+  "performance_targets": {
+    "processing_speed": "5s_7day_summary",
+    "sentiment_accuracy": "85_percent",
+    "correlation_precision": "90_percent",
+    "availability": "99.9_percent"
+  }
+}

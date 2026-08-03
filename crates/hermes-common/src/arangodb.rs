@@ -91,7 +91,7 @@ impl ArangoOperations for ArangoClient {
     }
 
     /// Insert a document into a collection
-    async fn insert_document(&self, collection: &str, document: &Value) -> Result<()> {
+    async fn insert_document(&self, collection: &str, _document: &Value) -> Result<()> {
         // TODO: Implement actual HTTP call when reqwest/OpenSSL is available
         info!("Mock: Inserting document into collection '{}'", collection);
         Ok(())

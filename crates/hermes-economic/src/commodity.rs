@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tracing::{info, warn, debug};
 use rust_decimal::Decimal;
+use rust_decimal::prelude::ToPrimitive;
 use async_trait::async_trait;
 
 /// Supported commodity types relevant to Indonesian economy

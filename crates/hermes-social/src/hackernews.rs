@@ -98,7 +98,8 @@ impl HackerNewsCollector {
     /// Get top story IDs
     async fn get_top_stories(&self, limit: usize) -> Result<Vec<u32>> {
         let url = format!("{}/topstories.json", self.base_url);
-        let story_ids: Vec<u32> = self.client.get_json(&url).await?;
+        let response_text = self.client.get_json_string(&url).await?;
+        let story_ids: Vec<u32> = serde_json::from_str(&response_text)?;
         
         Ok(story_ids.into_iter().take(limit).collect())
     }
@@ -107,8 +108,16 @@ impl HackerNewsCollector {
     async fn get_item(&self, id: u32) -> Result<Option<HNItem>> {
         let url = format!("{}/item/{}.json", self.base_url, id);
         
-        match self.client.get_json::<HNItem>(&url).await {
-            Ok(item) => Ok(Some(item)),
+        match self.client.get_json_string(&url).await {
+            Ok(json_str) => {
+                match serde_json::from_str::<HNItem>(&json_str) {
+                    Ok(item) => Ok(Some(item)),
+                    Err(e) => {
+                        debug!("Failed to parse HN item {}: {}", id, e);
+                        Ok(None)
+                    }
+                }
+            },
             Err(_) => {
                 debug!("Failed to fetch HN item {}", id);
                 Ok(None)

@@ -37,10 +37,14 @@ pub async fn collect_all_sources(
     let mut all_posts = Vec::new();
     
     // Parallel collection from all sources
+    let hn_collector = HackerNewsCollector::new();
+    let reddit_collector = RedditCollector::new();
+    let youtube_collector = YouTubeCollector::new();
+    
     let (hn_posts, reddit_posts, youtube_posts) = tokio::try_join!(
-        HackerNewsCollector::new().collect_by_topics(topics, depth),
-        RedditCollector::new().collect_by_topics(topics, depth),
-        YouTubeCollector::new().collect_metadata_by_topics(topics, depth)
+        hn_collector.collect_by_topics(topics, depth),
+        reddit_collector.collect_by_topics(topics, depth),
+        youtube_collector.collect_metadata_by_topics(topics, depth)
     )?;
     
     all_posts.extend(hn_posts);
