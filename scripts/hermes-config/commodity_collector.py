@@ -49,13 +49,15 @@ class CommodityCollector:
         timestamp = datetime.now(timezone.utc).isoformat()
         commodities = []
         
-        # Live commodity symbols and mappings
+        # Live commodity symbols and mappings - using yfinance
         commodity_symbols = {
-            "Nickel": "NI=F",           # NYMEX Nickel Futures
             "Gold": "GC=F",            # COMEX Gold Futures  
             "Crude Oil": "CL=F",       # WTI Crude Oil Futures
-            "Thermal Coal": "MTF=F",   # Coal Futures
-            "Palm Oil": "FCPO.KL"      # Bursa Malaysia Palm Oil
+            "Copper": "HG=F",          # COMEX Copper Futures
+            "Silver": "SI=F",          # COMEX Silver Futures
+            "Natural Gas": "NG=F",     # Natural Gas Futures
+            "Corn": "ZC=F",            # Corn Futures (agricultural)
+            "Soybean Oil": "ZL=F",     # Soybean Oil Futures
         }
         
         for commodity_name, symbol in commodity_symbols.items():
@@ -117,11 +119,13 @@ class CommodityCollector:
                 
                 # Get appropriate unit based on commodity
                 unit_map = {
-                    "Nickel": "per tonne",
                     "Gold": "per oz", 
                     "Crude Oil": "per barrel",
-                    "Thermal Coal": "per metric ton",
-                    "Palm Oil": "per tonne"
+                    "Copper": "per pound",
+                    "Silver": "per oz",
+                    "Natural Gas": "per MMBtu",
+                    "Corn": "per bushel",
+                    "Soybean Oil": "per pound"
                 }
                 
                 timestamp = datetime.now(timezone.utc).isoformat()
@@ -152,11 +156,13 @@ class CommodityCollector:
         """
         # Recent market data as fallback (updated quarterly)
         fallback_data = {
-            "Nickel": {"price": 18200, "range": 500, "trend": 1.02},
             "Gold": {"price": 2010, "range": 50, "trend": 0.998},  
             "Crude Oil": {"price": 78, "range": 3, "trend": 1.01},
-            "Thermal Coal": {"price": 135, "range": 8, "trend": 1.015},
-            "Palm Oil": {"price": 970, "range": 25, "trend": 0.995}
+            "Copper": {"price": 4.50, "range": 0.2, "trend": 1.02},
+            "Silver": {"price": 28.5, "range": 1.5, "trend": 1.015},
+            "Natural Gas": {"price": 3.20, "range": 0.15, "trend": 0.995},
+            "Corn": {"price": 510, "range": 25, "trend": 1.01},
+            "Soybean Oil": {"price": 69, "range": 3, "trend": 0.998}
         }
         
         if commodity_name not in fallback_data:
@@ -173,11 +179,13 @@ class CommodityCollector:
         daily_change = random.uniform(-base_data["range"], base_data["range"])
         
         unit_map = {
-            "Nickel": "per tonne",
             "Gold": "per oz",
             "Crude Oil": "per barrel", 
-            "Thermal Coal": "per metric ton",
-            "Palm Oil": "per tonne"
+            "Copper": "per pound",
+            "Silver": "per oz",
+            "Natural Gas": "per MMBtu",
+            "Corn": "per bushel",
+            "Soybean Oil": "per pound"
         }
         
         return CommodityData(
