@@ -16,12 +16,28 @@ from typing import Dict, List, Optional
 import requests
 from dataclasses import dataclass, asdict
 
+# Try to import ArangoDB storage
+try:
+    # Import from same directory
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from arango_storage import get_arango_storage
+    ARANGO_AVAILABLE = True
+except ImportError as e:
+    ARANGO_AVAILABLE = False
+    # logger will be defined after logging setup
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Log ArangoDB availability
+if not ARANGO_AVAILABLE:
+    logger.warning("ArangoDB storage not available. Install python-arango for database integration.")
 
 @dataclass
 class CommodityData:
@@ -37,9 +53,25 @@ class CommodityData:
 class CommodityCollector:
     """Enhanced Commodity Collector for Indonesian Strategic Commodities"""
     
-    def __init__(self):
+    def __init__(self, use_arangodb: bool = True):
         self.session = requests.Session()
         # Session will use timeout in individual requests
+        
+        # ArangoDB storage
+        self.use_arangodb = use_arangodb and ARANGO_AVAILABLE
+        self.arango_storage = None
+        
+        if self.use_arangodb:
+            try:
+                self.arango_storage = get_arango_storage()
+                if self.arango_storage.connect():
+                    logger.info("✅ ArangoDB storage initialized")
+                else:
+                    logger.warning("⚠️ ArangoDB connection failed, falling back to JSON storage")
+                    self.use_arangodb = False
+            except Exception as e:
+                logger.warning(f"⚠️ ArangoDB initialization failed: {e}")
+                self.use_arangodb = False
         
     def get_enhanced_commodities(self) -> List[CommodityData]:
         """
@@ -198,20 +230,46 @@ class CommodityCollector:
             source=f"Enhanced Intelligence Fallback"
         )
     
-    def save_to_storage(self, commodities: List[CommodityData], storage_type: str = "json"):
-        """Save commodity data to storage (JSON, SQLite, TimescaleDB)"""
+    def save_to_storage(self, commodities: List[CommodityData], storage_type: str = "auto"):
+        """
+        Save commodity data to storage
+        
+        Args:
+            commodities: List of commodity data
+            storage_type: "auto" (try ArangoDB first, fallback to JSON), 
+                         "arangodb", or "json"
+        """
         try:
-            if storage_type == "json":
-                filename = f"commodity_data_{int(time.time())}.json"
-                data = [asdict(commodity) for commodity in commodities]
-                
-                with open(filename, 'w') as f:
-                    json.dump(data, f, indent=2)
-                
-                logger.info(f"💾 Saved {len(commodities)} commodities to {filename}")
-                
+            # Convert commodities to dictionaries
+            data = [asdict(commodity) for commodity in commodities]
+            
+            # Try ArangoDB if available and requested
+            if (storage_type in ["auto", "arangodb"]) and self.use_arangodb and self.arango_storage:
+                stored_count = self.arango_storage.store_commodities(data)
+                if stored_count > 0:
+                    logger.info(f"💾 Saved {stored_count}/{len(commodities)} commodities to ArangoDB")
+                    # Also save JSON backup
+                    self._save_json_backup(data)
+                    return
+            
+            # Fallback to JSON storage
+            self._save_json_backup(data)
+            
         except Exception as e:
             logger.error(f"❌ Storage error: {e}")
+            # Fallback to JSON on error
+            try:
+                data = [asdict(commodity) for commodity in commodities]
+                self._save_json_backup(data)
+            except Exception as e2:
+                logger.error(f"❌ JSON fallback also failed: {e2}")
+    
+    def _save_json_backup(self, data: List[Dict]):
+        """Save commodity data to JSON file as backup"""
+        filename = f"commodity_data_{int(time.time())}.json"
+        with open(filename, 'w') as f:
+            json.dump(data, f, indent=2)
+        logger.info(f"💾 Saved {len(data)} commodities to JSON backup: {filename}")
     
     async def run_collector_daemon(self, interval_minutes: int = 30):
         """Run continuous commodity data collection"""
