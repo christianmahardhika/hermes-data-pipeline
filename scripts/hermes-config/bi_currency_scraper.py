@@ -8,7 +8,7 @@ Collects USD/IDR, EUR/IDR, SGD/IDR, JPY/IDR from Bank Indonesia official sources
 import requests
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from bs4 import BeautifulSoup
 import time
 import random
@@ -540,6 +540,42 @@ class EnhancedBICurrencyCollector:
         
         return analysis
     
+    def _store_to_arangodb(self, currency_data: dict) -> None:
+        """ADDITIVE: store currency rates to ArangoDB economic_indicators collection.
+        Failure here never affects the main collection flow (caller wraps in try/except)."""
+        try:
+            from arango import ArangoClient
+        except ImportError:
+            raise RuntimeError("python-arango not installed")
+
+        client = ArangoClient(hosts="http://localhost:8529")
+        db = client.db("intelligence", username="root", password="")
+
+        if not db.has_collection("economic_indicators"):
+            db.create_collection("economic_indicators")
+
+        rates = currency_data.get("currency_rates", {})
+        now = datetime.now(timezone.utc).isoformat()
+        stored = 0
+        for currency, rate_info in rates.items():
+            if not isinstance(rate_info, dict):
+                continue
+            rate = rate_info.get("middle", rate_info.get("buy"))
+            if rate is None:
+                continue
+            db.collection("economic_indicators").insert({
+                "indicator_name": f"BI_{currency}_MIDDLE_RATE",
+                "value": float(rate),
+                "unit": f"IDR per {currency}",
+                "country": "ID",
+                "source": "bank_indonesia_official",
+                "fetched_at": now,
+                "raw_json": rate_info,
+            }, overwrite=False)
+            stored += 1
+
+        logger.info(f"✅ Stored {stored} currency rates to ArangoDB economic_indicators")
+
     def update_intelligence_system(self) -> dict:
         """Update Christian's system with comprehensive currency data"""
         try:
@@ -560,6 +596,12 @@ class EnhancedBICurrencyCollector:
                     logger.info("✅ Currency data integrated to live dashboard")
             except:
                 logger.info("📊 Currency data saved locally for manual integration")
+            
+            # ADDITIVE: store to ArangoDB economic_indicators (never breaks existing flow)
+            try:
+                self._store_to_arangodb(currency_data)
+            except Exception as e:
+                logger.warning(f"⚠️ ArangoDB currency store skipped: {e}")
             
             return currency_data
             
