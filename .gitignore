@@ -108,3 +108,9 @@ _site/
 .jekyll-cache/
 .sass-cache/
 .jekyll-metadata
+
+# ArangoDB backups
+scripts/hermes-config/backups/
+target/
+.venv/
+news-social-intelligence-data-pipeline/target/

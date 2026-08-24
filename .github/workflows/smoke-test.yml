@@ -1,0 +1,25 @@
+name: smoke-test
+
+on:
+  push:
+    branches: [feature/pipeline-re-architecture, main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r scripts/hermes-config/requirements.txt
+
+      - name: Run smoke tests
+        run: |
+          python tests/smoke_test.py
