@@ -171,8 +171,10 @@ impl BPSIntegrationService {
             .map_err(|e| anyhow!("Failed to parse BPS response: {}", e))?;
             
         let mut data_points = Vec::new();
+        let default_name = format!("Variable {}", var_id);
         let var_name = self.critical_variables.get(&var_id)
-            .unwrap_or(&format!("Variable {}", var_id));
+            .map(|s| s.as_str())
+            .unwrap_or(&default_name);
             
         for raw_data in api_response.data {
             if let Ok(value) = raw_data.value.parse::<f64>() {
@@ -181,7 +183,7 @@ impl BPSIntegrationService {
                 let data_point = BPSDataPoint {
                     id: Uuid::new_v4(),
                     variable_id: var_id,
-                    variable_name: var_name.clone(),
+                    variable_name: var_name.to_string(),
                     value,
                     unit: raw_data.unit,
                     period: raw_data.period,

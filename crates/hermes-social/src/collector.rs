@@ -6,7 +6,6 @@ use std::collections::HashMap;
 use tracing::{info, warn, error};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use uuid::Uuid;
 
 /// Social media post unified representation
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -57,6 +56,7 @@ pub trait SocialCollector {
 /// Main social collection orchestrator
 pub struct SocialCollectorOrchestrator {
     collectors: Vec<Box<dyn SocialCollector + Send + Sync>>,
+    indonesian_stocks: Vec<IndonesianStock>,
 }
 
 impl SocialCollectorOrchestrator {
@@ -212,7 +212,7 @@ mod tests {
     
     #[tokio::test]
     async fn test_indonesian_stock_detection() {
-        let mut orchestrator = SocialCollectorOrchestrator::new();
+        let orchestrator = SocialCollectorOrchestrator::new();
         let mut posts = vec![
             SocialPost {
                 id: "test1".to_string(),
