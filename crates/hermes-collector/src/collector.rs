@@ -125,8 +125,8 @@ impl<T: HttpClient> HermesCollector<T> {
             return Ok(()); // Not an error, just circuit breaker protection
         }
 
-        // This is a placeholder since we can't actually fetch in this simplified implementation
-        // In real implementation, this would call self.rss_fetcher.fetch_feed(source).await
+        // Real fetch is async and happens in the async entrypoint (collect_all_feeds_async).
+        // This sync method tracks stats via a provided feed result.
         let mock_result = self.simulate_feed_collection(source);
         
         // Update circuit breaker and stats based on result
@@ -157,6 +157,78 @@ impl<T: HttpClient> HermesCollector<T> {
         }
 
         Ok(())
+    }
+
+    /// Async entrypoint: fetch all feeds for real, store via StorageClient
+    pub async fn collect_all_feeds_async(
+        &mut self,
+        storage: &news_intelligence::StorageClient,
+    ) -> Result<CollectionStats> {
+        let start_time = Instant::now();
+        let mut stats = CollectionStats::new();
+        stats.total_sources = self.sources.len();
+
+        info!(
+            sources = stats.total_sources,
+            "🚀 Starting async RSS collection cycle"
+        );
+
+        for source in self.sources.clone() {
+            // Check circuit breaker
+            let can_execute = self.circuit_breakers.get_mut(&source.name).map_or(true, |cb| cb.can_execute());
+            if !can_execute {
+                stats.circuit_breaker_trips += 1;
+                continue;
+            }
+
+            match self.rss_fetcher.fetch_feed(&source).await {
+                Ok(result) if result.is_success() => {
+                    let count = result.items.len();
+                    if let Some(cb) = self.circuit_breakers.get_mut(&source.name) {
+                        cb.record_success();
+                    }
+                    stats.successful_collections += 1;
+                    stats.articles_collected += count;
+
+                    // Store each item via storage
+                    for item in result.items {
+                        let article = news_intelligence::Article {
+                            title: item.title.clone(),
+                            source: source.name.clone(),
+                            content: item.description.clone(),
+                            timestamp: item.pub_date.map(|d| d.to_rfc3339()).unwrap_or_else(|| chrono::Utc::now().to_rfc3339()),
+                            category: format!("{:?}", source.category),
+                        };
+                        if let Err(e) = storage.store_article(&article).await {
+                            warn!(source = %source.name, error = %e, "Failed to store article");
+                        }
+                    }
+                }
+                Ok(result) => {
+                    if let Some(cb) = self.circuit_breakers.get_mut(&source.name) {
+                        cb.record_failure();
+                    }
+                    stats.failed_collections += 1;
+                    warn!(source = %source.name, error = %result.error, "RSS collection failed");
+                }
+                Err(e) => {
+                    if let Some(cb) = self.circuit_breakers.get_mut(&source.name) {
+                        cb.record_failure();
+                    }
+                    stats.failed_collections += 1;
+                    warn!(source = %source.name, error = %e, "RSS collection error");
+                }
+            }
+        }
+
+        stats.collection_duration_ms = start_time.elapsed().as_millis() as u64;
+        info!(
+            duration_ms = stats.collection_duration_ms,
+            articles_collected = stats.articles_collected,
+            success_rate = %format!("{:.1}%", stats.success_rate()),
+            "📊 Async RSS collection cycle completed"
+        );
+        Ok(stats)
     }
 
     /// Simulate feed collection for testing (placeholder)

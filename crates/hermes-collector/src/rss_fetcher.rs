@@ -19,6 +19,33 @@ pub struct MockHttpClient {
     pub responses: HashMap<String, Result<String, String>>,
 }
 
+/// Real HTTP client using reqwest
+#[derive(Debug, Clone)]
+pub struct ReqwestHttpClient {
+    client: reqwest::Client,
+}
+
+impl ReqwestHttpClient {
+    pub fn new() -> Result<Self> {
+        let client = reqwest::Client::builder()
+            .user_agent("hermes-collector/0.1 (news intelligence pipeline)")
+            .timeout(std::time::Duration::from_secs(30))
+            .build()?;
+        Ok(Self { client })
+    }
+}
+
+#[async_trait]
+impl HttpClient for ReqwestHttpClient {
+    async fn get(&self, url: &str) -> Result<String> {
+        let resp = self.client.get(url).send().await?;
+        if !resp.status().is_success() {
+            return Err(anyhow!("HTTP {} from {}", resp.status(), url));
+        }
+        Ok(resp.text().await?)
+    }
+}
+
 impl MockHttpClient {
     pub fn new() -> Self {
         Self {

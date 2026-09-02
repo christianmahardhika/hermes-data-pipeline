@@ -974,6 +974,8 @@ dependencies = [
  "chrono",
  "futures",
  "hermes-common",
+ "news-intelligence",
+ "reqwest",
  "rss",
  "serde",
  "serde_json",
@@ -981,6 +983,7 @@ dependencies = [
  "tokio",
  "tokio-test",
  "tracing",
+ "tracing-subscriber",
  "uuid",
 ]
 
@@ -1701,6 +1704,7 @@ dependencies = [
  "hashbrown 0.14.5",
  "num-traits",
  "regex",
+ "reqwest",
  "serde",
  "serde_json",
  "thiserror",
