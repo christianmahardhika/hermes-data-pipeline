@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use anyhow::{Result, anyhow};
 use rss::{Channel, Item};
 use std::collections::HashMap;
+use std::time::Duration;
 use tracing::{debug, error, warn};
 
 /// Trait for HTTP client abstraction (avoid OpenSSL dependency)
@@ -19,31 +20,92 @@ pub struct MockHttpClient {
     pub responses: HashMap<String, Result<String, String>>,
 }
 
-/// Real HTTP client using reqwest
+/// Real HTTP client using reqwest with retry-with-backoff for transient errors
 #[derive(Debug, Clone)]
 pub struct ReqwestHttpClient {
     client: reqwest::Client,
+    max_retries: u32,
+    base_backoff_ms: u64,
 }
 
 impl ReqwestHttpClient {
     pub fn new() -> Result<Self> {
         let client = reqwest::Client::builder()
-            .user_agent("hermes-collector/0.1 (news intelligence pipeline)")
+            .user_agent("hermes-collector/0.1 (news intelligence pipeline; +https://hermes.local)")
             .timeout(std::time::Duration::from_secs(30))
+            .connect_timeout(std::time::Duration::from_secs(10))
+            .tcp_keepalive(std::time::Duration::from_secs(60))
             .build()?;
-        Ok(Self { client })
+        Ok(Self { client, max_retries: 3, base_backoff_ms: 500 })
     }
+}
+
+/// Classify an HTTP error as transient (worth retry) or permanent (fail fast).
+fn is_transient(err: &anyhow::Error) -> bool {
+    if let Some(req_err) = err.downcast_ref::<reqwest::Error>() {
+        // 5xx, connection reset, timeout, request error → retry
+        if req_err.is_timeout() || req_err.is_connect() || req_err.is_request() {
+            return true;
+        }
+        if let Some(status) = req_err.status() {
+            return status.is_server_error();
+        }
+    }
+    let msg = format!("{:#}", err).to_lowercase();
+    msg.contains("connection reset")
+        || msg.contains("connection refused")
+        || msg.contains("os error 104")
+        || msg.contains("timed out")
+        || msg.contains("broken pipe")
 }
 
 #[async_trait]
 impl HttpClient for ReqwestHttpClient {
     async fn get(&self, url: &str) -> Result<String> {
+        let mut attempt = 0u32;
+        loop {
+            attempt += 1;
+            match self.try_get(url).await {
+                Ok(body) => return Ok(body),
+                Err(e) if attempt < self.max_retries && is_transient(&e) => {
+                    // Exponential backoff + jitter: 500ms, 1s, 2s, 4s... ±30%
+                    let backoff = self.base_backoff_ms * (1u64 << (attempt - 1));
+                    let jitter = (backoff / 3) as f64 * (rand_simple() - 0.5) * 2.0;
+                    let sleep_ms = (backoff as f64 + jitter).max(50.0) as u64;
+                    warn!(
+                        attempt = attempt,
+                        sleep_ms = sleep_ms,
+                        url = url,
+                        error = %e,
+                        "transient HTTP error, retrying"
+                    );
+                    tokio::time::sleep(Duration::from_millis(sleep_ms)).await;
+                }
+                Err(e) => return Err(e),
+            }
+        }
+    }
+}
+
+impl ReqwestHttpClient {
+    async fn try_get(&self, url: &str) -> Result<String> {
         let resp = self.client.get(url).send().await?;
-        if !resp.status().is_success() {
-            return Err(anyhow!("HTTP {} from {}", resp.status(), url));
+        let status = resp.status();
+        if !status.is_success() {
+            return Err(anyhow!("HTTP {} from {}", status, url));
         }
         Ok(resp.text().await?)
     }
+}
+
+/// Tiny PRNG for jitter — no extra dep, deterministic per-call.
+fn rand_simple() -> f64 {
+    use std::time::SystemTime;
+    let nanos = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .map(|d| d.subsec_nanos())
+        .unwrap_or(0);
+    (nanos % 10_000) as f64 / 10_000.0
 }
 
 impl MockHttpClient {

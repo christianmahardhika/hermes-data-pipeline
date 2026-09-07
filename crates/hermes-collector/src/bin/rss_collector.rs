@@ -13,7 +13,7 @@ use tracing_subscriber::FmtSubscriber;
 fn default_sources() -> Vec<FeedSource> {
     vec![
         // Indonesian
-        FeedSource::new("detik".to_string(), "https://rss.detik.com/index.php/detikcom".to_string(), FeedCategory::IndonesianNews, true),
+        FeedSource::new("detik".to_string(), "https://news.detik.com/rss".to_string(), FeedCategory::IndonesianNews, true),
         FeedSource::new("antara".to_string(), "https://www.antaranews.com/rss/terkini".to_string(), FeedCategory::IndonesianNews, true),
         FeedSource::new("tempo".to_string(), "https://rss.tempo.co/nasional".to_string(), FeedCategory::IndonesianNews, false),
         FeedSource::new("cnn_indonesia".to_string(), "https://www.cnnindonesia.com/rss".to_string(), FeedCategory::IndonesianNews, false),
