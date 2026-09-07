@@ -68,17 +68,19 @@ impl HttpClient for ReqwestHttpClient {
             match self.try_get(url).await {
                 Ok(body) => return Ok(body),
                 Err(e) if attempt < self.max_retries && is_transient(&e) => {
-                    // Exponential backoff + jitter: 500ms, 1s, 2s, 4s... ±30%
+                    // Exponential backoff + jitter: 500ms, 1s, 2s... ±30%
                     let backoff = self.base_backoff_ms * (1u64 << (attempt - 1));
                     let jitter = (backoff / 3) as f64 * (rand_simple() - 0.5) * 2.0;
                     let sleep_ms = (backoff as f64 + jitter).max(50.0) as u64;
-                    warn!(
-                        attempt = attempt,
-                        sleep_ms = sleep_ms,
-                        url = url,
-                        error = %e,
-                        "transient HTTP error, retrying"
-                    );
+                    // Silent retry: log only at debug level unless all retries fail
+                    if attempt == 1 {
+                        debug!(
+                            attempt = attempt,
+                            sleep_ms = sleep_ms,
+                            url = url,
+                            "transient error, retrying"
+                        );
+                    }
                     tokio::time::sleep(Duration::from_millis(sleep_ms)).await;
                 }
                 Err(e) => return Err(e),
