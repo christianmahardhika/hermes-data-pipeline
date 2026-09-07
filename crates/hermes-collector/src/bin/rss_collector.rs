@@ -4,7 +4,7 @@
 //!   cargo run -p hermes-collector --bin rss_collector
 //! Env: ARANGO_URL, ARANGO_DATABASE, ARANGO_USERNAME, ARANGO_PASSWORD
 
-use hermes_collector::{RssFetcher, ReqwestHttpClient, FeedSource, FeedCategory};
+use hermes_collector::{HermesCollector, ReqwestHttpClient, FeedSource, FeedCategory};
 use news_intelligence::StorageClient;
 use std::env;
 use tracing::{info, error, Level};
@@ -15,8 +15,7 @@ fn default_sources() -> Vec<FeedSource> {
         // Indonesian
         FeedSource::new("detik".to_string(), "https://rss.detik.com/index.php/detikcom".to_string(), FeedCategory::IndonesianNews, true),
         FeedSource::new("antara".to_string(), "https://www.antaranews.com/rss/terkini".to_string(), FeedCategory::IndonesianNews, true),
-        FeedSource::new("kompas".to_string(), "https://www.kompas.com/rss".to_string(), FeedCategory::IndonesianNews, true),
-        FeedSource::new("tempo".to_string(), "https://www.tempo.co/rss".to_string(), FeedCategory::IndonesianNews, false),
+        FeedSource::new("tempo".to_string(), "https://rss.tempo.co/nasional".to_string(), FeedCategory::IndonesianNews, false),
         FeedSource::new("cnn_indonesia".to_string(), "https://www.cnnindonesia.com/rss".to_string(), FeedCategory::IndonesianNews, false),
         // International (verified live)
         FeedSource::new("bbc_world".to_string(), "https://feeds.bbci.co.uk/news/world/rss.xml".to_string(), FeedCategory::InternationalNews, true),
@@ -39,19 +38,14 @@ async fn main() -> anyhow::Result<()> {
 
     info!("🚀 Starting Rust Native RSS Collector");
 
-    let url = env::var("ARANGO_URL").unwrap_or_else(|_| "http://localhost:8529".to_string());
-    let db = env::var("ARANGO_DATABASE").unwrap_or_else(|_| "news_analysis".to_string());
-    let user = env::var("ARANGO_USERNAME").unwrap_or_else(|_| "root".to_string());
-    let pass = env::var("ARANGO_PASSWORD").unwrap_or_else(|_| "".to_string());
-
-    let storage = StorageClient::new(&url, &db, &user, &pass)?;
+    let storage = StorageClient::from_env()?;
     storage.ensure_collection("articles").await?;
 
-    let client = ReqwestHttpClient::new();
-    let mut fetcher = RssFetcher::new(client);
+    let client = ReqwestHttpClient::new()?;
     let sources = default_sources();
+    let mut collector = HermesCollector::new(client).with_sources(sources);
 
-    let stats = fetcher.collect_all_feeds_async(&sources, &storage).await?;
+    let stats = collector.collect_all_feeds_async(&storage).await?;
 
     info!("✅ RSS Collection complete: {:?}", stats);
     Ok(())

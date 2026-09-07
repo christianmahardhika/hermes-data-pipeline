@@ -14,7 +14,7 @@ use tracing::info;
 /// Re-export core types for convenience
 pub use feed_source::{FeedSource, FeedCategory};
 pub use circuit_breaker::CircuitBreaker;
-pub use rss_fetcher::RssFetcher;
+pub use rss_fetcher::{RssFetcher, RssItem, ReqwestHttpClient, MockHttpClient};
 pub use collector::HermesCollector;
 
 /// Collection statistics for monitoring
